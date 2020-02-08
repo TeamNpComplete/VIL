@@ -1,126 +1,106 @@
 package com.vil.vil_bot;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
+import android.app.Activity;
+import android.os.AsyncTask;
 import android.os.Bundle;
+
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.google.gson.JsonElement;
+import java.util.UUID;
 
-import java.util.Map;
-
-import ai.api.AIListener;
+import ai.api.AIServiceContext;
+import ai.api.AIServiceContextBuilder;
 import ai.api.AIServiceException;
 import ai.api.android.AIConfiguration;
-import ai.api.android.AIService;
-import ai.api.model.AIError;
+import ai.api.android.AIDataService;
 import ai.api.model.AIRequest;
 import ai.api.model.AIResponse;
-import ai.api.model.Result;
 
-public class MainActivity extends AppCompatActivity implements AIListener {
 
-    AIService aiService;
+public class MainActivity extends AppCompatActivity {
+    AIDataService aiDataService;
+    AIServiceContext aiServiceContext;
+    AIRequest aiRequest;
     TextView t;
+    EditText e;
+    String uuid;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         t = findViewById(R.id.textView);
-        int permission = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.RECORD_AUDIO);
+        e = findViewById(R.id.edit_query);
 
-        if (permission != PackageManager.PERMISSION_GRANTED) {
+        uuid = UUID.randomUUID().toString();
 
-            makeRequest();
-        }
         final AIConfiguration config = new AIConfiguration("555542b49b8b456eb79774954ae64f1e",
                 AIConfiguration.SupportedLanguages.English,
                 AIConfiguration.RecognitionEngine.System);
-        aiService = AIService.getService(this, config);
-        aiService.setListener(this);
+
+        aiDataService = new AIDataService(this, config);
+        aiServiceContext = new AIServiceContextBuilder().buildFromSessionId(uuid);
+        aiRequest = new AIRequest();
     }
 
-    protected void makeRequest() {
-        ActivityCompat.requestPermissions(this,
-                new String[]{Manifest.permission.RECORD_AUDIO},
-                101);
+    public void callback(AIResponse aiResponse){
+        if(aiResponse != null){
+            String botReply = aiResponse.getResult().getFulfillment().getSpeech();
+            Log.d("Bot Reply", botReply);
+            t.setText(botReply);
+        } else {
+            Log.d("debuger", "Bot Reply : Null");
+            t.setText("Something ain't right here");
+        }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case 101: {
+    public void buttonClicked(View view) {
+        String msg = e.getText().toString();
 
-                if (grantResults.length == 0
-                        || grantResults[0] !=
-                        PackageManager.PERMISSION_GRANTED) {
-
-
-                } else {
-
-                }
-                return;
-            }
+        if(msg.trim().isEmpty()){
+            Toast.makeText(MainActivity.this, "Enter Query", Toast.LENGTH_LONG).show();
+        } else {
+            t.setText("");
+            aiRequest.setQuery(msg);
+            RequestTask requestTask = new RequestTask(MainActivity.this, aiDataService, aiServiceContext);
+            requestTask.execute(aiRequest);
         }
     }
 
 
-    public void buttonClicked(View view) throws AIServiceException {
-        aiService.startListening();
-        //AIRequest aiRequest = new AIRequest("Hello");
-        //aiService.textRequest(aiRequest);
-    }
+    public class RequestTask extends AsyncTask<AIRequest, Void, AIResponse>{
+        Activity activity;
+        AIDataService aiDataService;
+        AIServiceContext aiServiceContext;
 
-    @Override
-    public void onResult(AIResponse result) {
-
-        Log.d("anu",result.toString());
-        Result result1=result.getResult();
-
-        String parameterString = "";
-
-        if (result1.getParameters() != null && !result1.getParameters().isEmpty()) {
-            for (final Map.Entry<String, JsonElement> entry : result1.getParameters().entrySet()) {
-                parameterString += "(" + entry.getKey() + ", " + entry.getValue() + ") ";
-            }
+        public RequestTask(Activity activity, AIDataService aiDataService, AIServiceContext aiServiceContext) {
+            this.activity = activity;
+            this.aiDataService = aiDataService;
+            this.aiServiceContext = aiServiceContext;
         }
 
-        t.setText("Query "+result1.getResolvedQuery()+" action: "+parameterString);
+        @Override
+        protected AIResponse doInBackground(AIRequest... aiRequests) {
+            final AIRequest request = aiRequests[0];
 
+            try{
+                return aiDataService.request(request, aiServiceContext);
+            } catch (AIServiceException e){
+                e.printStackTrace();
+            }
 
-    }
+            return null;
+        }
 
-    @Override
-    public void onError(AIError error) {
-
-    }
-
-    @Override
-    public void onAudioLevel(float level) {
-
-    }
-
-    @Override
-    public void onListeningStarted() {
-
-    }
-
-    @Override
-    public void onListeningCanceled() {
-
-    }
-
-    @Override
-    public void onListeningFinished() {
-
+        @Override
+        protected void onPostExecute(AIResponse aiResponse) {
+            ((MainActivity)activity).callback(aiResponse);
+        }
     }
 }

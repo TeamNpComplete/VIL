@@ -7,10 +7,15 @@
     android:padding="10dp"
     android:orientation="vertical"
     tools:context="com.vil.vil_bot.MainActivity">
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/edit_query"
+        android:hint="Enter Query"/>
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Listen"
+        android:text="Send"
         android:onClick="buttonClicked"
         />
     <TextView

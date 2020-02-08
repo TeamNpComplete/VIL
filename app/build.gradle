@@ -11,6 +11,7 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -18,6 +19,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/INDEX.LIST'
+    }
+
 }
 
 dependencies {
@@ -26,12 +32,16 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
 
     implementation 'com.google.firebase:firebase-analytics:17.2.2'
+    implementation 'androidx.multidex:multidex:2.0.1'
 
     implementation 'ai.api:sdk:2.0.7@aar'
     // api.ai SDK dependencies
     //noinspection GradleCompatible
     implementation 'com.android.support:appcompat-v7:23.2.1'
     implementation 'ai.api:libai:1.6.12'
+
+    implementation 'com.google.cloud:google-cloud-dialogflow:0.67.0-alpha'
+    implementation 'io.grpc:grpc-okhttp:1.15.1'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
