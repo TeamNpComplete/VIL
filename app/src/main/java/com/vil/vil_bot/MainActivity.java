@@ -1,13 +1,20 @@
 package com.vil.vil_bot;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
 import android.util.Log;
 import android.view.View;
+import android.view.ViewTreeObserver;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -23,8 +30,11 @@ import com.google.cloud.dialogflow.v2.SessionName;
 import com.google.cloud.dialogflow.v2.SessionsClient;
 import com.google.cloud.dialogflow.v2.SessionsSettings;
 import com.google.cloud.dialogflow.v2.TextInput;
+import com.vil.vil_bot.adapters.AdapterChat;
+import com.vil.vil_bot.models.ModelMessage;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
@@ -32,15 +42,17 @@ public class MainActivity extends AppCompatActivity {
     SessionsClient client;
     SessionName sessionName;
 
-    TextView response;
     EditText query;
     String uuid;
+
+    RecyclerView recyclerView;
+    ArrayList<ModelMessage> modelMessageArrayList = new ArrayList<>();
+    AdapterChat adapterChat;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        response = findViewById(R.id.textView);
         query = findViewById(R.id.edit_query);
 
         uuid = UUID.randomUUID().toString();
@@ -59,6 +71,15 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        recyclerView = findViewById(R.id.chat_recycler_view);
+        adapterChat = new AdapterChat(this, modelMessageArrayList);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setAdapter(adapterChat);
+
+        setListenerToRootView();
+
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
     }
 
     public void buttonClicked(View view) {
@@ -67,13 +88,18 @@ public class MainActivity extends AppCompatActivity {
         if(msg.trim().isEmpty()){
             Toast.makeText(MainActivity.this, "Enter Query", Toast.LENGTH_LONG).show();
         } else {
-            response.setText("");
-
-            RelativeLayout userMsg = findViewById(R.id.bot_reply);
-//            userMsg.getLayoutParams().
-
+            adapterChat.addItem(new ModelMessage(msg, "user", "user"));
             QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(msg).setLanguageCode("en")).build();
             new RequestTask(MainActivity.this, sessionName, client, input).execute();
+
+            recyclerView.scrollToPosition(adapterChat.getItemCount() - 1);
+
+            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+            try {
+                imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+            }catch (NullPointerException e){
+
+            }
         }
     }
 
@@ -82,7 +108,16 @@ public class MainActivity extends AppCompatActivity {
             String botReply = response.getQueryResult().getFulfillmentText();
             Log.d("Bot Reply", botReply);
             query.setText("");
-            this.response.setText(botReply);
+            adapterChat.addItem(new ModelMessage(botReply, "bot", "bot"));
+
+            recyclerView.scrollToPosition(adapterChat.getItemCount() - 1);
+
+            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+            try {
+                imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+            }catch (NullPointerException e){
+
+            }
         } else {
             Log.d("Bot Reply", "Null");
         }
@@ -122,4 +157,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    boolean isOpened = false;
+
+    public void setListenerToRootView() {
+        final View activityRootView = getWindow().getDecorView().findViewById(android.R.id.content);
+        activityRootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+
+                int heightDiff = activityRootView.getRootView().getHeight() - activityRootView.getHeight();
+                if (heightDiff > 100) {
+                    
+                    if (isOpened == false) {
+                        recyclerView.scrollToPosition(adapterChat.getItemCount() - 1);
+                    }
+                    isOpened = true;
+                } else if (isOpened == true) {
+                    isOpened = false;
+                    recyclerView.scrollToPosition(adapterChat.getItemCount() - 1);
+                }
+            }
+        });
+    }
 }

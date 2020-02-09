@@ -11,11 +11,15 @@
         android:id="@+id/toolbar"
         layout="@layout/toolbar_layout" />
 
-    <androidx.core.widget.NestedScrollView
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/chat_recycler_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:windowSoftInputMode="adjustPan|adjustResize"
         app:layout_constraintTop_toBottomOf="@id/toolbar"
-        app:layout_constraintBottom_toTopOf="@id/input_field"/>
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/input_field" />
 
     <RelativeLayout
         android:id="@+id/input_field"
@@ -38,13 +42,5 @@
             android:text="Send"
             android:onClick="buttonClicked" />
     </RelativeLayout>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:id="@+id/textView"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/input_field"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

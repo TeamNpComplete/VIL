@@ -1,6 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <color name="colorPrimary">#03A9F4</color>
+    <color name="colorPrimaryDark">#0288D1</color>
+    <color name="colorAccent">#536DFE</color>
+    <color name="primaryDark">#0288D1</color>
+    <color name="primaryLight">#B3E5FC</color>
+    <color name="primaryText">#212121</color>
+    <color name="secondaryText">#757575</color>
+
+    <color name="black">#000000</color>
+    <color name="light_grey">#e4e4e4</color>
+    <color name="grey">#8b8b8b</color>
+    <color name="dark_grey">#696969</color>
+    <color name="white">#FFFFFF</color>
+
+    <color name="headings">#3797CF</color>
+    <color name="solidCircle">#AAFFFFFF</color>
+    <color name="circleBorder">#50FFFFFF</color>
+    <color name="gradEnd">#02CCEB</color>
+    <color name="gradStart">#00B8D4</color>
+
+    <color name="placeholder_bg">#DDDDDD</color>
+
+
+    <color name="login_background">#FFFFFF</color>
+    <color name="splash_background">#FFFFFF</color>
+
+    <color name="answer_text_color">#1D1717</color>
 </resources>
