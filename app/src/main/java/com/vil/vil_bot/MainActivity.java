@@ -12,21 +12,25 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.cloud.dialogflow.v2.DetectIntentRequest;
+import com.google.cloud.dialogflow.v2.DetectIntentResponse;
+import com.google.cloud.dialogflow.v2.QueryInput;
+import com.google.cloud.dialogflow.v2.SessionName;
+import com.google.cloud.dialogflow.v2.SessionsClient;
+import com.google.cloud.dialogflow.v2.SessionsSettings;
+import com.google.cloud.dialogflow.v2.TextInput;
+
+import java.io.InputStream;
 import java.util.UUID;
 
-import ai.api.AIServiceContext;
-import ai.api.AIServiceContextBuilder;
-import ai.api.AIServiceException;
-import ai.api.android.AIConfiguration;
-import ai.api.android.AIDataService;
-import ai.api.model.AIRequest;
-import ai.api.model.AIResponse;
-
-
 public class MainActivity extends AppCompatActivity {
-    AIDataService aiDataService;
-    AIServiceContext aiServiceContext;
-    AIRequest aiRequest;
+
+    SessionsClient client;
+    SessionName sessionName;
+
     TextView t;
     EditText e;
     String uuid;
@@ -40,23 +44,19 @@ public class MainActivity extends AppCompatActivity {
 
         uuid = UUID.randomUUID().toString();
 
-        final AIConfiguration config = new AIConfiguration("555542b49b8b456eb79774954ae64f1e",
-                AIConfiguration.SupportedLanguages.English,
-                AIConfiguration.RecognitionEngine.System);
+        try{
+            InputStream stream = getResources().openRawResource(R.raw.agent_credentials);
+            GoogleCredentials credentials = GoogleCredentials.fromStream(stream);
+            String projectId = ((ServiceAccountCredentials)credentials).getProjectId();
 
-        aiDataService = new AIDataService(this, config);
-        aiServiceContext = new AIServiceContextBuilder().buildFromSessionId(uuid);
-        aiRequest = new AIRequest();
-    }
+            SessionsSettings.Builder settingsBuilder = SessionsSettings.newBuilder();
+            SessionsSettings settings = settingsBuilder.setCredentialsProvider(FixedCredentialsProvider.create(credentials)).build();
 
-    public void callback(AIResponse aiResponse){
-        if(aiResponse != null){
-            String botReply = aiResponse.getResult().getFulfillment().getSpeech();
-            Log.d("Bot Reply", botReply);
-            t.setText(botReply);
-        } else {
-            Log.d("debuger", "Bot Reply : Null");
-            t.setText("Something ain't right here");
+            client = SessionsClient.create(settings);
+            sessionName = SessionName.of(projectId, uuid);
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -67,40 +67,54 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this, "Enter Query", Toast.LENGTH_LONG).show();
         } else {
             t.setText("");
-            aiRequest.setQuery(msg);
-            RequestTask requestTask = new RequestTask(MainActivity.this, aiDataService, aiServiceContext);
-            requestTask.execute(aiRequest);
+            QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(msg).setLanguageCode("en")).build();
+            new RequestTask(MainActivity.this, sessionName, client, input).execute();
+        }
+    }
+
+    public void callback(DetectIntentResponse response){
+        if(response != null) {
+            String botReply = response.getQueryResult().getFulfillmentText();
+            Log.d("Bot Reply", botReply);
+            e.setText("");
+            t.setText(botReply);
+        } else {
+            Log.d("Bot Reply", "Null");
         }
     }
 
 
-    public class RequestTask extends AsyncTask<AIRequest, Void, AIResponse>{
-        Activity activity;
-        AIDataService aiDataService;
-        AIServiceContext aiServiceContext;
+    public class RequestTask extends AsyncTask<Void, Void, DetectIntentResponse> {
 
-        public RequestTask(Activity activity, AIDataService aiDataService, AIServiceContext aiServiceContext) {
+        Activity activity;
+        SessionName sessionName;
+        SessionsClient client;
+        QueryInput input;
+
+        public RequestTask(Activity activity, SessionName sessionName, SessionsClient client, QueryInput input) {
             this.activity = activity;
-            this.aiDataService = aiDataService;
-            this.aiServiceContext = aiServiceContext;
+            this.sessionName = sessionName;
+            this.client = client;
+            this.input = input;
         }
 
         @Override
-        protected AIResponse doInBackground(AIRequest... aiRequests) {
-            final AIRequest request = aiRequests[0];
-
+        protected DetectIntentResponse doInBackground(Void... voids) {
             try{
-                return aiDataService.request(request, aiServiceContext);
-            } catch (AIServiceException e){
+                DetectIntentRequest detectIntentRequest = DetectIntentRequest.newBuilder().setSession(sessionName.toString())
+                        .setQueryInput(input).build();
+
+                return client.detectIntent(detectIntentRequest);
+            } catch (Exception e){
                 e.printStackTrace();
             }
-
             return null;
         }
 
         @Override
-        protected void onPostExecute(AIResponse aiResponse) {
-            ((MainActivity)activity).callback(aiResponse);
+        protected void onPostExecute(DetectIntentResponse detectIntentResponse) {
+            ((MainActivity)activity).callback(detectIntentResponse);
         }
     }
+
 }
