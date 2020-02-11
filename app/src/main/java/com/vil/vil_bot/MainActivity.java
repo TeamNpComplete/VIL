@@ -30,6 +30,7 @@ import com.google.cloud.dialogflow.v2.SessionName;
 import com.google.cloud.dialogflow.v2.SessionsClient;
 import com.google.cloud.dialogflow.v2.SessionsSettings;
 import com.google.cloud.dialogflow.v2.TextInput;
+import com.skyfishjy.library.RippleBackground;
 import com.vil.vil_bot.adapters.AdapterChat;
 import com.vil.vil_bot.models.ModelMessage;
 
@@ -49,10 +50,15 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<ModelMessage> modelMessageArrayList = new ArrayList<>();
     AdapterChat adapterChat;
 
+    RippleBackground rippleBackground;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        rippleBackground = findViewById(R.id.ripple_effect);
+
         query = findViewById(R.id.edit_query);
 
         uuid = UUID.randomUUID().toString();
@@ -84,6 +90,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void buttonClicked(View view) {
         String msg = query.getText().toString();
+
+        rippleBackground.startRippleAnimation();
 
         if(msg.trim().isEmpty()){
             Toast.makeText(MainActivity.this, "Enter Query", Toast.LENGTH_LONG).show();
