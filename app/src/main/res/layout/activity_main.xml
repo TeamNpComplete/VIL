@@ -59,8 +59,7 @@
                 android:layout_marginRight="7dp"
                 android:layout_marginLeft="5dp"
                 android:backgroundTint="@color/colorPrimary"
-                android:src="@drawable/microphone"
-                android:onClick="buttonClicked" />
+                android:src="@drawable/microphone" />
 
         </com.skyfishjy.library.RippleBackground>
 

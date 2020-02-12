@@ -29,6 +29,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
         this.modelMessageArrayList = modelMessageArrayList;
     }
 
+
     @NonNull
     @Override
     public MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -52,6 +53,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
             holder.card.setLayoutParams(layoutParams);
             Drawable drawable = context.getResources().getDrawable(R.drawable.blue_rectangle);
             holder.linearLayout.setBackground(drawable);
+            //holder.time.setTextColor(Color.parseColor("#696969"));
         } else {
             holder.message.setTextColor(Color.parseColor("#000000"));
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -64,9 +66,11 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
             holder.card.setLayoutParams(layoutParams);
             Drawable drawable = context.getResources().getDrawable(R.drawable.white_rectangle);
             holder.linearLayout.setBackground(drawable);
+            //holder.time.setTextColor(Color.parseColor("#e4e4e4"));
         }
 
         holder.message.setText(modelMessage.getText());
+        //holder.time.setText(modelMessage.getDate().substring(0, 16).trim());
     }
 
     @Override

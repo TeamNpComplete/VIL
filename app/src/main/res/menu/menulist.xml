@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/changeLanguage"
+        android:itemBackground="@color/white"
+        android:title="Change Language" />
+    <item
+        android:id="@+id/aboutUs"
+        android:itemBackground="@color/white"
+        android:title="About Us" />
+</menu>
