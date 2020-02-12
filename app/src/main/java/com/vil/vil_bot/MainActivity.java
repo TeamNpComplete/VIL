@@ -1,25 +1,28 @@
 package com.vil.vil_bot;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.Configuration;
+import android.media.AudioFormat;
+import android.media.MediaRecorder;
 import android.os.AsyncTask;
 import android.os.Bundle;
-
+import android.os.Environment;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
@@ -30,13 +33,28 @@ import com.google.cloud.dialogflow.v2.SessionName;
 import com.google.cloud.dialogflow.v2.SessionsClient;
 import com.google.cloud.dialogflow.v2.SessionsSettings;
 import com.google.cloud.dialogflow.v2.TextInput;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.MultiplePermissionsReport;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 import com.skyfishjy.library.RippleBackground;
 import com.vil.vil_bot.adapters.AdapterChat;
 import com.vil.vil_bot.models.ModelMessage;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+
+import omrecorder.AudioChunk;
+import omrecorder.AudioRecordConfig;
+import omrecorder.OmRecorder;
+import omrecorder.PullTransport;
+import omrecorder.PullableSource;
+import omrecorder.Recorder;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -44,13 +62,17 @@ public class MainActivity extends AppCompatActivity {
     SessionName sessionName;
 
     EditText query;
+    FloatingActionButton sendButton;
     String uuid;
+    boolean isRecording = false;
 
     RecyclerView recyclerView;
     ArrayList<ModelMessage> modelMessageArrayList = new ArrayList<>();
     AdapterChat adapterChat;
 
     RippleBackground rippleBackground;
+
+    Recorder recorder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +81,33 @@ public class MainActivity extends AppCompatActivity {
 
         rippleBackground = findViewById(R.id.ripple_effect);
 
+        Dexter.withActivity(MainActivity.this)
+                .withPermissions(
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.RECORD_AUDIO)
+                .withListener(new MultiplePermissionsListener() {
+                    @Override
+                    public void onPermissionsChecked(MultiplePermissionsReport report) {
+                        if(report.areAllPermissionsGranted()){
+
+                        }
+
+                        if(report.isAnyPermissionPermanentlyDenied()){
+                            Toast.makeText(MainActivity.this, "Permission Denied !", Toast.LENGTH_SHORT).show();
+                            MainActivity.this.finish();
+                        }
+                    }
+
+                    @Override
+                    public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {
+
+                    }
+                })
+                .onSameThread()
+                .check();
+
         query = findViewById(R.id.edit_query);
+        sendButton = findViewById(R.id.send_btn);
 
         uuid = UUID.randomUUID().toString();
 
@@ -83,6 +131,10 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapterChat);
 
+        sendButton.setOnTouchListener(touchListener);
+
+        setupRecorder();
+
         setListenerToRootView();
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
@@ -94,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
         rippleBackground.startRippleAnimation();
 
         if(msg.trim().isEmpty()){
-            Toast.makeText(MainActivity.this, "Enter Query", Toast.LENGTH_LONG).show();
+
         } else {
             adapterChat.addItem(new ModelMessage(msg, "user", "user"));
             QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(msg).setLanguageCode("en")).build();
@@ -130,6 +182,31 @@ public class MainActivity extends AppCompatActivity {
             Log.d("Bot Reply", "Null");
         }
     }
+
+    View.OnTouchListener touchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            if(event.getAction() == MotionEvent.ACTION_UP){
+                Toast.makeText(MainActivity.this, "Released !", Toast.LENGTH_SHORT).show();
+                if(isRecording){
+                    try {
+                        recorder.stopRecording();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    isRecording = false;
+                }
+                return true;
+            }
+            if(event.getAction() == MotionEvent.ACTION_DOWN){
+                Toast.makeText(MainActivity.this, "Pressed !", Toast.LENGTH_SHORT).show();
+                recorder.startRecording();
+                isRecording = true;
+                return true;
+            }
+            return false;
+        }
+    };
 
 
     public class RequestTask extends AsyncTask<Void, Void, DetectIntentResponse> {
@@ -186,5 +263,28 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void setupRecorder() {
+        recorder = OmRecorder.wav(
+                new PullTransport.Default(mic(), new PullTransport.OnAudioChunkPulledListener() {
+                    @Override public void onAudioChunkPulled(AudioChunk audioChunk) {
+                        //animateVoice((float) (audioChunk.maxAmplitude() / 200.0));
+                    }
+                }), file());
+    }
+
+    private PullableSource mic() {
+        return new PullableSource.Default(
+                new AudioRecordConfig.Default(
+                        MediaRecorder.AudioSource.MIC, AudioFormat.ENCODING_PCM_16BIT,
+                        AudioFormat.CHANNEL_IN_MONO, 44100
+                )
+        );
+    }
+
+    @NonNull
+    private File file() {
+        return new File(Environment.getExternalStorageDirectory(), "kailashdabhi.wav");
     }
 }
