@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "916913213395",
+    "firebase_url": "https://demo1bot-qqroxv.firebaseio.com",
+    "project_id": "demo1bot-qqroxv",
+    "storage_bucket": "demo1bot-qqroxv.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:916913213395:android:6c15910fcf2f7aba456926",
+        "android_client_info": {
+          "package_name": "com.vil.vil_bot"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "916913213395-ma6qqoekri8noh2m2ghj7eq1rej3d04m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqK05lVoNfzrIjtK3WPrPZHx6ZAS_S_0c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "916913213395-90f4837ngkj8h83gceccmpblmauschj5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

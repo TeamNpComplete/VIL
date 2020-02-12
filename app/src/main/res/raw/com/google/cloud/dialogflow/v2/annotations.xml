@@ -1,0 +1,5 @@
+<root>
+    <item name='com.google.cloud.dialogflow.v2.DetectIntentResponse'>
+        <annotation name='java.lang.Deprecated' />
+    </item>
+</root>
