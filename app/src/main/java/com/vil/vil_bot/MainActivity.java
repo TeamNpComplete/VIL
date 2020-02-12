@@ -1,27 +1,31 @@
 package com.vil.vil_bot;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.media.AudioFormat;
+import android.media.MediaRecorder;
 import android.os.AsyncTask;
 import android.os.Bundle;
-
+import android.os.Environment;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
@@ -32,13 +36,28 @@ import com.google.cloud.dialogflow.v2.SessionName;
 import com.google.cloud.dialogflow.v2.SessionsClient;
 import com.google.cloud.dialogflow.v2.SessionsSettings;
 import com.google.cloud.dialogflow.v2.TextInput;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.MultiplePermissionsReport;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 import com.skyfishjy.library.RippleBackground;
 import com.vil.vil_bot.adapters.AdapterChat;
 import com.vil.vil_bot.models.ModelMessage;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+
+import omrecorder.AudioChunk;
+import omrecorder.AudioRecordConfig;
+import omrecorder.OmRecorder;
+import omrecorder.PullTransport;
+import omrecorder.PullableSource;
+import omrecorder.Recorder;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -46,7 +65,9 @@ public class MainActivity extends AppCompatActivity {
     SessionName sessionName;
 
     EditText query;
+    FloatingActionButton sendButton;
     String uuid;
+    boolean isRecording = false;
 
     RecyclerView recyclerView;
     ArrayList<ModelMessage> modelMessageArrayList = new ArrayList<>();
@@ -54,13 +75,42 @@ public class MainActivity extends AppCompatActivity {
 
     RippleBackground rippleBackground;
 
+    Recorder recorder;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         rippleBackground = findViewById(R.id.ripple_effect);
+
+        Dexter.withActivity(MainActivity.this)
+                .withPermissions(
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.RECORD_AUDIO)
+                .withListener(new MultiplePermissionsListener() {
+                    @Override
+                    public void onPermissionsChecked(MultiplePermissionsReport report) {
+                        if(report.areAllPermissionsGranted()){
+
+                        }
+
+                        if(report.isAnyPermissionPermanentlyDenied()){
+                            Toast.makeText(MainActivity.this, "Permission Denied !", Toast.LENGTH_SHORT).show();
+                            MainActivity.this.finish();
+                        }
+                    }
+
+                    @Override
+                    public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {
+
+                    }
+                })
+                .onSameThread()
+                .check();
+
         query = findViewById(R.id.edit_query);
+        sendButton = findViewById(R.id.send_btn);
 
         uuid = UUID.randomUUID().toString();
 
@@ -84,62 +134,25 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapterChat);
 
+        sendButton.setOnTouchListener(touchListener);
+
+        setupRecorder();
+
         setListenerToRootView();
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 
-        SQLiteDatabase database = this.openOrCreateDatabase("TeleData",0, null);
-
-        database.execSQL("CREATE TABLE IF NOT EXISTS SMS(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), no_of_sms INTEGER(3))");
-        database.execSQL("INSERT INTO SMS VALUES(1, '10 Days', 12, 120)");
-        database.execSQL("INSERT INTO SMS VALUES(2, '28 Days', 26, 250)");
-        database.execSQL("INSERT INTO SMS VALUES(3, '10 Days', 36, 350)");
-
-        database.execSQL("CREATE TABLE IF NOT EXISTS Talktime(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), talktime FLOAT)");
-        database.execSQL("INSERT INTO Talktime VALUES(1, 'Unrestricted', 10, 7.47)");
-        database.execSQL("INSERT INTO Talktime VALUES(2, 'Unrestricted', 20, 14.95)");
-        database.execSQL("INSERT INTO Talktime VALUES(3, 'Unrestricted', 30, 22.42)");
-        database.execSQL("INSERT INTO Talktime VALUES(4, 'Unrestricted', 50, 39.37)");
-        database.execSQL("INSERT INTO Talktime VALUES(5, 'Unrestricted', 100, 81.75)");
-        database.execSQL("INSERT INTO Talktime VALUES(6, 'Unrestricted', 1000, 847.46)");
-        database.execSQL("INSERT INTO Talktime VALUES(7, 'Unrestricted', 500, 423.75)");
-        database.execSQL("INSERT INTO Talktime VALUES(8, 'Unrestricted', 5000, 4237.29)");
-
-        database.execSQL("CREATE TABLE IF NOT EXISTS Netpack(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), data VARCHAR)");
-        database.execSQL("INSERT INTO Netpack VALUES(1, '28 Days', 98, '6GB')");
-        database.execSQL("INSERT INTO Netpack VALUES(2, '28 Days', 48, '3GB')");
-        database.execSQL("INSERT INTO Netpack VALUES(3, '1 Day', 16, '1GB')");
-
-        database.execSQL("CREATE TABLE IF NOT EXISTS Unlimited(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), data VARCHAR)");
-        database.execSQL("INSERT INTO Unlimited VALUES(1, '28 Days', 249, '1.5GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(2, '56 Days', 399, '1.5GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(3, '84 Days', 599, '1.5GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(4, '56 Days', 449, '2GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(5, '28 Days', 219, '1GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(6, '84 Days', 699, '2GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(7, '28 Days', 299, '2GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(8, '84 Days', 379, '6GB')");
-        database.execSQL("INSERT INTO Unlimited VALUES(9, '365 Days', 1499, '24GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(10, '365 Days', 2399, '1.5GB/day')");
-
-        Cursor c = database.rawQuery("SELECT * FROM SMS", null);
-        c.moveToFirst();
-        while(c != null) {
-            Log.e("Cost", c.getString(c.getColumnIndex("cost")));
-            Log.e("Validity", c.getString(c.getColumnIndex("validity")));
-            Log.e("NOS", c.getString(c.getColumnIndex("no_of_sms")));
-            c.moveToNext();
-        }
+        createDatabase();
     }
 
     public void buttonClicked(View view) {
         String msg = query.getText().toString();
         query.setText("");
 
-        rippleBackground.startRippleAnimation();
+//        rippleBackground.startRippleAnimation();
 
         if(msg.trim().isEmpty()){
-            Toast.makeText(MainActivity.this, "Enter Query", Toast.LENGTH_LONG).show();
+
         } else {
             adapterChat.addItem(new ModelMessage(msg, "user", "user"));
             QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(msg).setLanguageCode("en")).build();
@@ -175,6 +188,33 @@ public class MainActivity extends AppCompatActivity {
             Log.d("Bot Reply", "Null");
         }
     }
+
+    View.OnTouchListener touchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            if(event.getAction() == MotionEvent.ACTION_UP){
+                Toast.makeText(MainActivity.this, "Released !", Toast.LENGTH_SHORT).show();
+                if(isRecording){
+                    try {
+                        recorder.stopRecording();
+                        setupRecorder();
+                        isRecording = false;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                return true;
+            }
+            if(event.getAction() == MotionEvent.ACTION_DOWN){
+                Toast.makeText(MainActivity.this, "Pressed !", Toast.LENGTH_SHORT).show();
+
+                recorder.startRecording();
+                isRecording = true;
+                return true;
+            }
+            return false;
+        }
+    };
 
 
     public class RequestTask extends AsyncTask<Void, Void, DetectIntentResponse> {
@@ -231,5 +271,75 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void setupRecorder() {
+        recorder = OmRecorder.wav(
+                new PullTransport.Default(mic(), new PullTransport.OnAudioChunkPulledListener() {
+                    @Override public void onAudioChunkPulled(AudioChunk audioChunk) {
+                        //animateVoice((float) (audioChunk.maxAmplitude() / 200.0));
+                    }
+                }), file());
+
+
+    }
+
+    private PullableSource mic() {
+        return new PullableSource.Default(
+                new AudioRecordConfig.Default(
+                        MediaRecorder.AudioSource.MIC, AudioFormat.ENCODING_PCM_16BIT,
+                        AudioFormat.CHANNEL_IN_MONO, 22050
+                )
+        );
+    }
+
+    @NonNull
+    private File file() {
+        return new File(Environment.getExternalStorageDirectory(), "kailashdabhi.wav");
+    }
+
+    public void createDatabase() {
+        SQLiteDatabase database = this.openOrCreateDatabase("TeleData",0, null);
+
+        database.execSQL("CREATE TABLE IF NOT EXISTS SMS(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), no_of_sms INTEGER(3))");
+        database.execSQL("INSERT INTO SMS VALUES(1, '10 Days', 12, 120)");
+        database.execSQL("INSERT INTO SMS VALUES(2, '28 Days', 26, 250)");
+        database.execSQL("INSERT INTO SMS VALUES(3, '10 Days', 36, 350)");
+
+        database.execSQL("CREATE TABLE IF NOT EXISTS Talktime(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), talktime FLOAT)");
+        database.execSQL("INSERT INTO Talktime VALUES(1, 'Unrestricted', 10, 7.47)");
+        database.execSQL("INSERT INTO Talktime VALUES(2, 'Unrestricted', 20, 14.95)");
+        database.execSQL("INSERT INTO Talktime VALUES(3, 'Unrestricted', 30, 22.42)");
+        database.execSQL("INSERT INTO Talktime VALUES(4, 'Unrestricted', 50, 39.37)");
+        database.execSQL("INSERT INTO Talktime VALUES(5, 'Unrestricted', 100, 81.75)");
+        database.execSQL("INSERT INTO Talktime VALUES(6, 'Unrestricted', 1000, 847.46)");
+        database.execSQL("INSERT INTO Talktime VALUES(7, 'Unrestricted', 500, 423.75)");
+        database.execSQL("INSERT INTO Talktime VALUES(8, 'Unrestricted', 5000, 4237.29)");
+
+        database.execSQL("CREATE TABLE IF NOT EXISTS Netpack(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), data VARCHAR)");
+        database.execSQL("INSERT INTO Netpack VALUES(1, '28 Days', 98, '6GB')");
+        database.execSQL("INSERT INTO Netpack VALUES(2, '28 Days', 48, '3GB')");
+        database.execSQL("INSERT INTO Netpack VALUES(3, '1 Day', 16, '1GB')");
+
+        database.execSQL("CREATE TABLE IF NOT EXISTS Unlimited(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), data VARCHAR)");
+        database.execSQL("INSERT INTO Unlimited VALUES(1, '28 Days', 249, '1.5GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(2, '56 Days', 399, '1.5GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(3, '84 Days', 599, '1.5GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(4, '56 Days', 449, '2GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(5, '28 Days', 219, '1GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(6, '84 Days', 699, '2GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(7, '28 Days', 299, '2GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(8, '84 Days', 379, '6GB')");
+        database.execSQL("INSERT INTO Unlimited VALUES(9, '365 Days', 1499, '24GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(10, '365 Days', 2399, '1.5GB/day')");
+
+        Cursor c = database.rawQuery("SELECT * FROM SMS", null);
+        c.moveToFirst();
+        while(c != null) {
+            Log.e("Cost", c.getString(c.getColumnIndex("cost")));
+            Log.e("Validity", c.getString(c.getColumnIndex("validity")));
+            Log.e("NOS", c.getString(c.getColumnIndex("no_of_sms")));
+            c.moveToNext();
+        }
     }
 }
