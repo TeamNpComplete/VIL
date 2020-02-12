@@ -191,15 +191,17 @@ public class MainActivity extends AppCompatActivity {
                 if(isRecording){
                     try {
                         recorder.stopRecording();
-                    } catch (IOException e) {
+                        setupRecorder();
+                        isRecording = false;
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    isRecording = false;
                 }
                 return true;
             }
             if(event.getAction() == MotionEvent.ACTION_DOWN){
                 Toast.makeText(MainActivity.this, "Pressed !", Toast.LENGTH_SHORT).show();
+
                 recorder.startRecording();
                 isRecording = true;
                 return true;
@@ -272,13 +274,15 @@ public class MainActivity extends AppCompatActivity {
                         //animateVoice((float) (audioChunk.maxAmplitude() / 200.0));
                     }
                 }), file());
+
+
     }
 
     private PullableSource mic() {
         return new PullableSource.Default(
                 new AudioRecordConfig.Default(
                         MediaRecorder.AudioSource.MIC, AudioFormat.ENCODING_PCM_16BIT,
-                        AudioFormat.CHANNEL_IN_MONO, 44100
+                        AudioFormat.CHANNEL_IN_MONO, 22050
                 )
         );
     }
