@@ -49,8 +49,16 @@ import com.skyfishjy.library.RippleBackground;
 import com.vil.vil_bot.adapters.AdapterChat;
 import com.vil.vil_bot.models.ModelMessage;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -66,6 +74,9 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -268,7 +279,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             adapterChat.addItem(new ModelMessage(msg, "user", "user"));
             QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(msg).setLanguageCode("en")).build();
-            new RequestTask(MainActivity.this, sessionName, client, input).execute();
+            new RequestTask(MainActivity.this, sessionName, client, input, msg,0).execute();
 
             recyclerView.scrollToPosition(adapterChat.getItemCount() - 1);
 
@@ -281,12 +292,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void callback(DetectIntentResponse response){
+    public void callback(DetectIntentResponse response, String text){
         if(response != null) {
-            String botReply = response.getQueryResult().getFulfillmentText();
+            if(text == null)
+                text = response.getQueryResult().getFulfillmentText();
+
+            //String botReply = response.getQueryResult().getFulfillmentText();
             String s = response.getQueryResult().getAction();
             Log.d("Bot Reply", s);
-            adapterChat.addItem(new ModelMessage(botReply, "bot", "bot"));
+            adapterChat.addItem(new ModelMessage(text, "bot", "bot"));
 
             recyclerView.scrollToPosition(adapterChat.getItemCount() - 1);
 
@@ -342,19 +356,30 @@ public class MainActivity extends AppCompatActivity {
         SessionName sessionName;
         SessionsClient client;
         QueryInput input;
+        String text;
+        int requestType;
 
-        RequestTask(Activity activity, SessionName sessionName, SessionsClient client, QueryInput input) {
+        RequestTask(Activity activity, SessionName sessionName, SessionsClient client, QueryInput input, String text, int requestType) {
             this.activity = activity;
             this.sessionName = sessionName;
             this.client = client;
             this.input = input;
+            this.requestType = requestType;
+            this.text = text;
         }
 
         @Override
         protected DetectIntentResponse doInBackground(Void... voids) {
 
-
-
+            if(requestType == 0){
+                String langCode = ((MainActivity)activity).langCode;
+                if(langCode != "en-IN"){
+                    String result = translate(text, langCode, "en-IN");
+                    input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(result).setLanguageCode("en")).build();
+                    Log.e("Lang_Check", result);
+                }
+            }
+            Log.e("Lang_Check", "Translated");
             try{
                 DetectIntentRequest detectIntentRequest = DetectIntentRequest.newBuilder().setSession(sessionName.toString())
                         .setQueryInput(input).build();
@@ -363,16 +388,69 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception e){
                 e.printStackTrace();
             }
+
             return null;
         }
 
         @Override
         protected void onPostExecute(DetectIntentResponse detectIntentResponse) {
-            ((MainActivity)activity).callback(detectIntentResponse);
+            String result = null;
+            if(requestType == 0){
+                String langCode = ((MainActivity)activity).langCode;
+                if(langCode != "en-IN"){
+                    TranslateTask task = new TranslateTask(activity, sessionName, client, input, detectIntentResponse.getQueryResult().getFulfillmentText(), requestType);
+                    task.setResponse(detectIntentResponse);
+                    task.execute();
+                } else {
+                    ((MainActivity)activity).callback(detectIntentResponse, result);
+                }
+                Log.e("Lang_Check", "Translated Again");
+            }
         }
+
+
+        public String translate(String text, String srcLang, String targetLang){
+
+            String result = "";
+
+            try {
+                URL url = new URL("http://192.168.43.141:5000/translate");
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("POST");
+                connection.setRequestProperty("content-type", "application/json; utf-8");
+                connection.setRequestProperty("Accept", "application/json; utf-8");
+                connection.setDoOutput(true);
+                JSONObject body = new JSONObject();
+                body.put("text", text);
+                body.put("source_lang", srcLang);
+                body.put("target_lang", targetLang);
+
+                OutputStream os = connection.getOutputStream();
+                byte[] data = body.toString().getBytes();
+                os.write(data, 0, data.length);
+
+                BufferedReader br = new BufferedReader(new InputStreamReader(
+                        connection.getInputStream(), "utf-8"));
+
+                StringBuilder resp = new StringBuilder();
+                String responseLine = null;
+
+                while((responseLine = br.readLine()) != null){
+                    resp.append(responseLine.trim());
+                }
+
+                JSONObject response = new JSONObject(resp.toString());
+                //JSONObject text = new JSONObject(response.getString("response").substring(5));
+
+                result = response.getString("response");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return result;
+        }
+
     }
-
-
 
     boolean isOpened = false;
 
@@ -423,5 +501,41 @@ public class MainActivity extends AppCompatActivity {
 
     public void createDatabase() {
 
+    }
+
+    static class TranslateTask extends AsyncTask<Void, Void, String> {
+
+        Activity activity;
+        SessionName sessionName;
+        SessionsClient client;
+        QueryInput input;
+        String text;
+        int requestType;
+        DetectIntentResponse response;
+
+        public TranslateTask(Activity activity, SessionName sessionName, SessionsClient client, QueryInput input, String text, int requestType) {
+            this.activity = activity;
+            this.sessionName = sessionName;
+            this.client = client;
+            this.input = input;
+            this.text = text;
+            this.requestType = requestType;
+        }
+
+        public void setResponse(DetectIntentResponse response) {
+            this.response = response;
+        }
+
+        @Override
+        protected String doInBackground(Void... voids) {
+            String langCode = ((MainActivity) activity).langCode;
+            String result = new RequestTask(activity, sessionName, client, input, text, requestType).translate(text, "en-IN", langCode);
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            ((MainActivity)activity).callback(response, s);
+        }
     }
 }
