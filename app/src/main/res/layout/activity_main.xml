@@ -5,7 +5,7 @@
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#DDD"
+    android:background="#EEE"
     tools:context="com.vil.vil_bot.MainActivity">
 
     <include
@@ -30,20 +30,19 @@
 
         <EditText
             android:layout_width="match_parent"
-            android:layout_height="55dp"
+            android:layout_height="50dp"
             android:id="@+id/edit_query"
             android:background="@drawable/search_bg"
             android:layout_marginLeft="7dp"
-            android:layout_marginBottom="7dp"
             android:layout_toLeftOf="@+id/ripple_effect"
-            android:hint="Enter Query" />
+            android:hint="Enter Query"
+            android:inputType="textCapSentences"/>
 
         <com.skyfishjy.library.RippleBackground
             android:id="@+id/ripple_effect"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="7dp"
-            android:layout_marginRight="7dp"
+            android:layout_marginRight="3dp"
             android:layout_alignParentRight="true"
             app:rb_color="@color/colorPrimaryDark"
             app:rb_radius="32dp"
@@ -53,11 +52,10 @@
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/send_btn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="7dp"
-                android:layout_marginRight="7dp"
-                android:layout_marginLeft="5dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                app:fabCustomSize="50dp"
+                android:layout_margin="5dp"
                 android:backgroundTint="@color/colorPrimary"
                 android:src="@drawable/microphone" />
 
