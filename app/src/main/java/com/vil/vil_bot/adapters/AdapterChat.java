@@ -13,6 +13,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.cardview.widget.CardView;
 
@@ -25,10 +27,13 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
 
     private Context context;
     private ArrayList<ModelMessage> modelMessageArrayList;
+    private RecyclerView.RecycledViewPool recycledViewPool;
+    private BillAdapter billAdapter;
 
     public AdapterChat(Context context, ArrayList<ModelMessage> modelMessageArrayList){
         this.context = context;
         this.modelMessageArrayList = modelMessageArrayList;
+        recycledViewPool = new RecyclerView.RecycledViewPool();
     }
 
     @NonNull
@@ -79,6 +84,12 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
 
         holder.message.setText(modelMessage.getText());
         //holder.time.setText(modelMessage.getDate().substring(0, 16).trim());
+
+
+        billAdapter = new BillAdapter();
+        holder.recyclerViewBill.setAdapter(billAdapter);
+        holder.recyclerViewBill.setRecycledViewPool(recycledViewPool);
+
     }
 
     @Override
@@ -91,6 +102,8 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
         TextView message;
         CardView card, det_card;
         LinearLayout linearLayout;
+        RecyclerView recyclerViewBill;
+        LinearLayoutManager verticalManager = new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false);
 
         public MyViewHolder(@NonNull View itemView) {
 
@@ -99,6 +112,12 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
             message = itemView.findViewById(R.id.chat_message_text);
             card = itemView.findViewById(R.id.chat_msg_card);
             linearLayout = itemView.findViewById(R.id.chat_card_linear_layout);
+
+            recyclerViewBill = itemView.findViewById(R.id.plansList);
+            recyclerViewBill.setHasFixedSize(true);
+            recyclerViewBill.setNestedScrollingEnabled(false);
+            recyclerViewBill.setLayoutManager(verticalManager);
+            recyclerViewBill.setItemAnimator(new DefaultItemAnimator());
         }
     }
 

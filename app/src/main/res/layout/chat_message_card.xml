@@ -43,10 +43,16 @@
                     android:textSize="20sp"
                     android:textColor="@color/white"/>
 
+
             </LinearLayout>
 
         </androidx.cardview.widget.CardView>
 
     </androidx.cardview.widget.CardView>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/plansList"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 
 </LinearLayout>
