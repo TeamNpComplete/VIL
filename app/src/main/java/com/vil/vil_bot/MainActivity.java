@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.media.AudioFormat;
@@ -74,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
 
     EditText query;
     String uuid;
+    String langCode;
 
     RecyclerView recyclerView;
     ArrayList<ModelMessage> modelMessageArrayList = new ArrayList<>();
@@ -112,6 +114,21 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Intent i = getIntent();
+        langCode = i.getStringExtra("langCode");
+
+        if(langCode == null){
+            langCode = getSharedPreferences("BOT_CONFIG", MODE_PRIVATE).getString("langCode", null);
+            if(langCode == null){
+                langCode = "en-IN";
+                getSharedPreferences("BOT_CONFIG", MODE_PRIVATE).edit().putString("langCode", langCode).commit();
+            }
+        } else {
+            getSharedPreferences("BOT_CONFIG", MODE_PRIVATE).edit().putString("langCode", langCode).commit();
+        }
+
+        Toast.makeText(this, langCode, Toast.LENGTH_SHORT).show();
 
         rippleBackground = findViewById(R.id.ripple_effect);
         sendButton = findViewById(R.id.send_btn);
@@ -244,7 +261,9 @@ public class MainActivity extends AppCompatActivity {
 
 //        rippleBackground.startRippleAnimation();
 
-        if(msg.trim().isEmpty()){
+        msg = msg.trim();
+
+        if(msg.isEmpty()){
 
         } else {
             adapterChat.addItem(new ModelMessage(msg, "user", "user"));
@@ -302,6 +321,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("onTextChanged", String.valueOf(isRecording));
                 if(isRecording) {
                     Log.e("Error Check", "Recording Started");
+                    setupRecorder();
                     recorder.startRecording();
                 }
                 else {
@@ -315,7 +335,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    public static class RequestTask extends AsyncTask<Void, Void, DetectIntentResponse> {
+    static class RequestTask extends AsyncTask<Void, Void, DetectIntentResponse> {
 
         @SuppressLint("StaticFieldLeak")
         Activity activity;
@@ -332,6 +352,9 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected DetectIntentResponse doInBackground(Void... voids) {
+
+
+
             try{
                 DetectIntentRequest detectIntentRequest = DetectIntentRequest.newBuilder().setSession(sessionName.toString())
                         .setQueryInput(input).build();
@@ -348,6 +371,8 @@ public class MainActivity extends AppCompatActivity {
             ((MainActivity)activity).callback(detectIntentResponse);
         }
     }
+
+
 
     boolean isOpened = false;
 
