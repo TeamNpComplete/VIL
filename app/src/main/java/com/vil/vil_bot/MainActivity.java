@@ -81,6 +81,9 @@ import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
 
+    static String host = "http://192.168.225.138:5000";
+    static File audioFile = null;
+
     SessionsClient client;
     SessionName sessionName;
 
@@ -371,14 +374,15 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected DetectIntentResponse doInBackground(Void... voids) {
 
-            if(requestType == 0){
-                String langCode = ((MainActivity)activity).langCode;
-                if(langCode != "en-IN"){
-                    String result = translate(text, langCode, "en-IN");
-                    input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(result).setLanguageCode("en")).build();
-                    Log.e("Lang_Check", result);
-                }
+
+
+            String langCode = ((MainActivity)activity).langCode;
+            if(langCode != "en-IN"){
+                String result = translate(text, langCode, "en-IN");
+                input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(result).setLanguageCode("en")).build();
+                Log.e("Lang_Check", result);
             }
+
             Log.e("Lang_Check", "Translated");
             try{
                 DetectIntentRequest detectIntentRequest = DetectIntentRequest.newBuilder().setSession(sessionName.toString())
@@ -395,17 +399,15 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(DetectIntentResponse detectIntentResponse) {
             String result = null;
-            if(requestType == 0){
-                String langCode = ((MainActivity)activity).langCode;
-                if(langCode != "en-IN"){
-                    TranslateTask task = new TranslateTask(activity, sessionName, client, input, detectIntentResponse.getQueryResult().getFulfillmentText(), requestType);
-                    task.setResponse(detectIntentResponse);
-                    task.execute();
-                } else {
-                    ((MainActivity)activity).callback(detectIntentResponse, result);
-                }
-                Log.e("Lang_Check", "Translated Again");
+            String langCode = ((MainActivity)activity).langCode;
+            if(langCode != "en-IN"){
+                TranslateTask task = new TranslateTask(activity, sessionName, client, input, detectIntentResponse.getQueryResult().getFulfillmentText(), requestType);
+                task.setResponse(detectIntentResponse);
+                task.execute();
+            } else {
+                ((MainActivity)activity).callback(detectIntentResponse, result);
             }
+            Log.e("Lang_Check", "Translated Again");
         }
 
 
@@ -414,7 +416,7 @@ public class MainActivity extends AppCompatActivity {
             String result = "";
 
             try {
-                URL url = new URL("http://192.168.43.141:5000/translate");
+                URL url = new URL(MainActivity.host + "/translate");
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setRequestProperty("content-type", "application/json; utf-8");
@@ -496,7 +498,8 @@ public class MainActivity extends AppCompatActivity {
 
     @NonNull
     private File file() {
-        return new File(Environment.getExternalStorageDirectory(), "audioFile.wav");
+        audioFile = new File(Environment.getExternalStorageDirectory(), "audioFile.wav");
+        return audioFile;
     }
 
     public void createDatabase() {
