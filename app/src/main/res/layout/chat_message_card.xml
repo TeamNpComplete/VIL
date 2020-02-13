@@ -16,12 +16,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@null"
-        app:cardCornerRadius="0dp"
+        app:cardCornerRadius="10dp"
         app:cardElevation="3dp">
 
         <androidx.cardview.widget.CardView
-            android:elevation="0dp"
-            app:cardCornerRadius="4dp"
+            app:cardCornerRadius="10dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">
 
@@ -43,15 +42,6 @@
                     android:text="Good Night"
                     android:textSize="20sp"
                     android:textColor="@color/white"/>
-
-<!--                <TextView-->
-<!--                    android:id="@+id/chat_message_time"-->
-<!--                    android:layout_gravity="end"-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:text=""-->
-<!--                    android:textSize="10sp"-->
-<!--                    android:textColor="@color/light_grey"/>-->
 
             </LinearLayout>
 

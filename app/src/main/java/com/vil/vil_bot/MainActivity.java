@@ -257,7 +257,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void buttonClicked() {
-        String msg = query.getText().toString();
+        String msg = query.getText().toString().trim();
 
 //        rippleBackground.startRippleAnimation();
 
@@ -284,9 +284,10 @@ public class MainActivity extends AppCompatActivity {
     public void callback(DetectIntentResponse response){
         if(response != null) {
             String botReply = response.getQueryResult().getFulfillmentText();
-            String s = response.getQueryResult().getAction();
-            Log.d("Bot Reply", s);
-            adapterChat.addItem(new ModelMessage(botReply, "bot", "bot"));
+            String intent = response.getQueryResult().getAction();
+            Log.e("Intent", intent);
+
+            adapterChat.addItem(new ModelMessage(botReply, intent, "bot"));
 
             recyclerView.scrollToPosition(adapterChat.getItemCount() - 1);
 
@@ -297,7 +298,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         } else {
-            Log.d("Bot Reply", "Null");
+//            Log.d("Bot Reply", "Null");
         }
     }
 
@@ -311,21 +312,20 @@ public class MainActivity extends AppCompatActivity {
                         recorder.stopRecording();
                         setupRecorder();
                     } catch (Exception e) {
-                        e.printStackTrace();
+//                        e.printStackTrace();
                     }
                 }
                 return true;
             }
             if(event.getAction() == MotionEvent.ACTION_DOWN){
                 Toast.makeText(MainActivity.this, "Pressed !", Toast.LENGTH_SHORT).show();
-                Log.e("onTextChanged", String.valueOf(isRecording));
                 if(isRecording) {
-                    Log.e("Error Check", "Recording Started");
+//                    Log.e("Error Check", "Recording Started");
                     setupRecorder();
                     recorder.startRecording();
                 }
                 else {
-                    Log.e("Error Check", "Button Clicked");
+//                    Log.e("Error Check", "Button Clicked");
                     buttonClicked();
                 }
                 query.setText("");
@@ -352,8 +352,6 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected DetectIntentResponse doInBackground(Void... voids) {
-
-
 
             try{
                 DetectIntentRequest detectIntentRequest = DetectIntentRequest.newBuilder().setSession(sessionName.toString())

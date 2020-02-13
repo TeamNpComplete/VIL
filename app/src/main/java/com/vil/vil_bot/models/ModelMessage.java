@@ -5,16 +5,16 @@ import java.util.Date;
 
 public class ModelMessage {
     String messageID;
-    String text, senderID, senderName, date;
+    String text, intent, senderName, date;
     Object timestamp;
 
     public ModelMessage(){
 
     }
 
-    public ModelMessage(String text, String senderID, String senderName) {
+    public ModelMessage(String text, String intent, String senderName) {
         this.text = text;
-        this.senderID = senderID;
+        this.intent = intent;
         this.senderName = senderName;
         this.date = Calendar.getInstance().getTime().toString();
         this.timestamp = new Date().getTime();
@@ -36,12 +36,12 @@ public class ModelMessage {
         this.text = text;
     }
 
-    public String getSenderID() {
-        return senderID;
+    public String getIntent() {
+        return intent;
     }
 
-    public void setSenderID(String senderID) {
-        this.senderID = senderID;
+    public void setIntent(String intent) {
+        this.intent = intent;
     }
 
     public String getSenderName() {
