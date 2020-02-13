@@ -209,50 +209,14 @@ public class MainActivity extends AppCompatActivity {
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 
-        /*database = this.openOrCreateDatabase("TeleData",0, null);
+        //--------------
+        database = this.openOrCreateDatabase("TeleData",0, null);
 
-        database.execSQL("CREATE TABLE IF NOT EXISTS SMS(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), no_of_sms INTEGER(3))");
-        database.execSQL("INSERT INTO SMS VALUES(1, '10 Days', 12, 120)");
-        database.execSQL("INSERT INTO SMS VALUES(2, '28 Days', 26, 250)");
-        database.execSQL("INSERT INTO SMS VALUES(3, '10 Days', 36, 350)");
 
-        database.execSQL("CREATE TABLE IF NOT EXISTS Talktime(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), talktime FLOAT)");
-        database.execSQL("INSERT INTO Talktime VALUES(1, 'Unrestricted', 10, 7.47)");
-        database.execSQL("INSERT INTO Talktime VALUES(2, 'Unrestricted', 20, 14.95)");
-        database.execSQL("INSERT INTO Talktime VALUES(3, 'Unrestricted', 30, 22.42)");
-        database.execSQL("INSERT INTO Talktime VALUES(4, 'Unrestricted', 50, 39.37)");
-        database.execSQL("INSERT INTO Talktime VALUES(5, 'Unrestricted', 100, 81.75)");
-        database.execSQL("INSERT INTO Talktime VALUES(6, 'Unrestricted', 1000, 847.46)");
-        database.execSQL("INSERT INTO Talktime VALUES(7, 'Unrestricted', 500, 423.75)");
-        database.execSQL("INSERT INTO Talktime VALUES(8, 'Unrestricted', 5000, 4237.29)");
 
-        database.execSQL("CREATE TABLE IF NOT EXISTS Netpack(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), data VARCHAR)");
-        database.execSQL("INSERT INTO Netpack VALUES(1, '28 Days', 98, '6GB')");
-        database.execSQL("INSERT INTO Netpack VALUES(2, '28 Days', 48, '3GB')");
-        database.execSQL("INSERT INTO Netpack VALUES(3, '1 Day', 16, '1GB')");
-
-        database.execSQL("CREATE TABLE IF NOT EXISTS Unlimited(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), data VARCHAR)");
-        database.execSQL("INSERT INTO Unlimited VALUES(1, '28 Days', 249, '1.5GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(2, '56 Days', 399, '1.5GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(3, '84 Days', 599, '1.5GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(4, '56 Days', 449, '2GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(5, '28 Days', 219, '1GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(6, '84 Days', 699, '2GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(7, '28 Days', 299, '2GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(8, '84 Days', 379, '6GB')");
-        database.execSQL("INSERT INTO Unlimited VALUES(9, '365 Days', 1499, '24GB/day')");
-        database.execSQL("INSERT INTO Unlimited VALUES(10, '365 Days', 2399, '1.5GB/day')");
-
-        Cursor c = database.rawQuery("SELECT * FROM SMS", null);
-        c.moveToFirst();
-        while(c != null) {
-            Log.e("Cost", c.getString(c.getColumnIndex("cost")));
-            Log.e("Validity", c.getString(c.getColumnIndex("validity")));
-            Log.e("NOS", c.getString(c.getColumnIndex("no_of_sms")));
-            c.moveToNext();
-        }
-*/
-        createDatabase();
+        //--------------
+        if(!checkForTableExists(database))
+            createDatabase();
 
     }
 
@@ -422,6 +386,59 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void createDatabase() {
+        database.execSQL("CREATE TABLE IF NOT EXISTS SMS(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), no_of_sms INTEGER(3))");
+        database.execSQL("INSERT INTO SMS VALUES(1, '10 Days', 12, 120)");
+        database.execSQL("INSERT INTO SMS VALUES(2, '28 Days', 26, 250)");
+        database.execSQL("INSERT INTO SMS VALUES(3, '10 Days', 36, 350)");
 
+        database.execSQL("CREATE TABLE IF NOT EXISTS Talktime(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), talktime FLOAT)");
+        database.execSQL("INSERT INTO Talktime VALUES(1, 'Unrestricted', 10, 7.47)");
+        database.execSQL("INSERT INTO Talktime VALUES(2, 'Unrestricted', 20, 14.95)");
+        database.execSQL("INSERT INTO Talktime VALUES(3, 'Unrestricted', 30, 22.42)");
+        database.execSQL("INSERT INTO Talktime VALUES(4, 'Unrestricted', 50, 39.37)");
+        database.execSQL("INSERT INTO Talktime VALUES(5, 'Unrestricted', 100, 81.75)");
+        database.execSQL("INSERT INTO Talktime VALUES(6, 'Unrestricted', 1000, 847.46)");
+        database.execSQL("INSERT INTO Talktime VALUES(7, 'Unrestricted', 500, 423.75)");
+        database.execSQL("INSERT INTO Talktime VALUES(8, 'Unrestricted', 5000, 4237.29)");
+
+        database.execSQL("CREATE TABLE IF NOT EXISTS Netpack(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), data VARCHAR)");
+        database.execSQL("INSERT INTO Netpack VALUES(1, '28 Days', 98, '6GB')");
+        database.execSQL("INSERT INTO Netpack VALUES(2, '28 Days', 48, '3GB')");
+        database.execSQL("INSERT INTO Netpack VALUES(3, '1 Day', 16, '1GB')");
+
+        database.execSQL("CREATE TABLE IF NOT EXISTS Unlimited(id INTEGER(2) PRIMARY KEY, validity VARCHAR, cost INTEGER(4), data VARCHAR)");
+        database.execSQL("INSERT INTO Unlimited VALUES(1, '28 Days', 249, '1.5GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(2, '56 Days', 399, '1.5GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(3, '84 Days', 599, '1.5GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(4, '56 Days', 449, '2GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(5, '28 Days', 219, '1GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(6, '84 Days', 699, '2GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(7, '28 Days', 299, '2GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(8, '84 Days', 379, '6GB')");
+        database.execSQL("INSERT INTO Unlimited VALUES(9, '365 Days', 1499, '24GB/day')");
+        database.execSQL("INSERT INTO Unlimited VALUES(10, '365 Days', 2399, '1.5GB/day')");
+
+        Cursor c = database.rawQuery("SELECT * FROM SMS", null);
+        c.moveToFirst();
+        while(c.moveToNext()) {
+            //Log.d("message",Integer.toString(c.getColumnIndex("cost")));
+            Log.e("Cost", c.getString(c.getColumnIndex("cost")));
+            Log.e("Validity", c.getString(c.getColumnIndex("validity")));
+            Log.e("NOS", c.getString(c.getColumnIndex("no_of_sms")));
+            c.moveToNext();
+        }
+        c.close();
+    }
+
+
+    private boolean checkForTableExists(SQLiteDatabase db){
+        String sql = "SELECT  name FROM sqlite_master WHERE type='table' AND name='SMS'";
+        Cursor mCursor = db.rawQuery(sql, null);
+        if (mCursor.getCount() > 0) {
+            return true;
+        }
+        mCursor.close();
+        return false;
     }
 }
+
