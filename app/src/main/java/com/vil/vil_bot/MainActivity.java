@@ -418,13 +418,12 @@ public class MainActivity extends AppCompatActivity {
 
         Cursor c = database.rawQuery("SELECT * FROM SMS", null);
         c.moveToFirst();
-        while(c.moveToNext()) {
+        do {
             //Log.d("message",Integer.toString(c.getColumnIndex("cost")));
             Log.e("Cost", c.getString(c.getColumnIndex("cost")));
             Log.e("Validity", c.getString(c.getColumnIndex("validity")));
             Log.e("NOS", c.getString(c.getColumnIndex("no_of_sms")));
-            c.moveToNext();
-        }
+        }while(c.moveToNext());
         c.close();
     }
 
