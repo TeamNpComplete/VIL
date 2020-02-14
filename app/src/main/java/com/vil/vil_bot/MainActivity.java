@@ -248,7 +248,7 @@ public class MainActivity extends AppCompatActivity {
     public void callback(DetectIntentResponse response){
         if(response != null) {
             String botReply = response.getQueryResult().getFulfillmentText();
-            String intent = response.getQueryResult().getAction();
+            String intent = response.getQueryResult().getIntent().getDisplayName();
             Log.e("Intent", intent);
 
             adapterChat.addItem(new ModelMessage(botReply, intent, "bot"));

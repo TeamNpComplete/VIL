@@ -24,8 +24,8 @@ public class BillAdapter extends RecyclerView.Adapter<BillAdapter.MyViewHolder> 
 
     @Override
     public void onBindViewHolder(@NonNull BillAdapter.MyViewHolder holder, int position) {
-        holder.rechargeValidity.setText("ahfa");
-        holder.rechargeType.setText("Unlimited");
+//        holder.rechargeValidity.setText("ahfa");
+//        holder.rechargeType.setText("Unlimited");
     }
 
     @Override

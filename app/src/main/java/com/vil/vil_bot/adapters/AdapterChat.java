@@ -61,10 +61,11 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
             Drawable drawable = context.getResources().getDrawable(R.drawable.blue_rectangle);
             holder.linearLayout.setBackground(drawable);
             //holder.time.setTextColor(Color.parseColor("#696969"));
-        }
-        else if(modelMessage.getIntent().equals("data.plan.upgrade")) {
-//            Log.e("DataPlan", "Upgrade, its here");
-//            holder.det_card.addView(holder.itemView, position);
+            if(modelMessage.getIntent().equals("recharge.phone.upgrade")) {
+                billAdapter = new BillAdapter();
+                holder.recyclerViewBill.setAdapter(billAdapter);
+                holder.recyclerViewBill.setRecycledViewPool(recycledViewPool);
+            }
         }
         else {
             // message by user
@@ -84,12 +85,6 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
 
         holder.message.setText(modelMessage.getText());
         //holder.time.setText(modelMessage.getDate().substring(0, 16).trim());
-
-
-        billAdapter = new BillAdapter();
-        holder.recyclerViewBill.setAdapter(billAdapter);
-        holder.recyclerViewBill.setRecycledViewPool(recycledViewPool);
-
     }
 
     @Override
@@ -100,7 +95,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
     public class MyViewHolder extends RecyclerView.ViewHolder{
 
         TextView message;
-        CardView card, det_card;
+        CardView card;
         LinearLayout linearLayout;
         RecyclerView recyclerViewBill;
         LinearLayoutManager verticalManager = new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false);
