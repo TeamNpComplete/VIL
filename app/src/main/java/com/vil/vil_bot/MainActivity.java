@@ -5,14 +5,12 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.media.AudioFormat;
 import android.media.MediaRecorder;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -51,14 +49,12 @@ import com.vil.vil_bot.models.ModelMessage;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -75,13 +71,19 @@ import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 
 public class MainActivity extends AppCompatActivity {
 
-    static String host = "http://192.168.43.141:5000";
+    static String host = "http://192.168.0.10:5000";
     static File audioFile = null;
 
     SessionsClient client;
@@ -290,6 +292,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Released !", Toast.LENGTH_SHORT).show();
                     try {
                         recorder.stopRecording();
+                        new SpeechToTextTask(MainActivity.this,sessionName, client).execute();
                         setupRecorder();
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -461,7 +464,7 @@ public class MainActivity extends AppCompatActivity {
 
     @NonNull
     private File file() {
-        audioFile = new File(Environment.getExternalStorageDirectory(), "audioFile.wav");
+        audioFile = new File(getExternalFilesDir("temp"), "audioFile.wav");
         return audioFile;
     }
 
@@ -536,13 +539,80 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(Void... voids) {
             String langCode = ((MainActivity) activity).langCode;
-            String result = new RequestTask(activity, sessionName, client, input, text, requestType).translate(text, "en-IN", langCode);
-            return result;
+            if(text != null && text.length() > 0){
+                String result = new RequestTask(activity, sessionName, client, input, text, requestType).translate(text, "en-IN", langCode);
+                return result;
+            }
+            return null;
         }
 
         @Override
         protected void onPostExecute(String s) {
-            ((MainActivity)activity).callback(response, s);
+            if(s != null)
+                ((MainActivity)activity).callback(response, s);
+        }
+    }
+
+    static class SpeechToTextTask extends AsyncTask<Void, Void, JSONObject>{
+
+        Activity activity;
+        SessionName sessionName;
+        SessionsClient client;
+
+        public SpeechToTextTask(Activity activity, SessionName sessionName, SessionsClient client) {
+            this.activity = activity;
+            this.sessionName = sessionName;
+            this.client = client;
+
+        }
+
+        @Override
+        protected JSONObject doInBackground(Void... voids) {
+            String result = "";
+            try {
+                String url = MainActivity.host + "/speech-to-text?lang=" + ((MainActivity)activity).langCode;
+                File file = MainActivity.audioFile;
+                try {
+                    HttpClient httpclient = new DefaultHttpClient();
+
+                    HttpPost httppost = new HttpPost(url);
+
+                    InputStreamEntity reqEntity = new InputStreamEntity(
+                            new FileInputStream(file), -1);
+                    reqEntity.setContentType("binary/octet-stream");
+                    reqEntity.setChunked(true); // Send in multiple parts if needed
+                    httppost.setEntity(reqEntity);
+                    HttpResponse response = httpclient.execute(httppost);
+
+                    return new JSONObject(EntityUtils.toString(response.getEntity()));
+                } catch (Exception e) {
+                    // show error
+                }
+
+                return null;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(JSONObject resp) {
+
+            try {
+//                Toast.makeText(activity, resp.getString("english"), Toast.LENGTH_SHORT).show();
+//                Log.e("STOP", resp.getString("english"));
+                ((MainActivity) activity).adapterChat.addItem(new ModelMessage(resp.getString("source_lang"), "user", "user"));
+                QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(resp.getString("source_lang")).setLanguageCode("en")).build();
+                new RequestTask(activity, sessionName, client, input, resp.getString("source_lang"),0).execute();
+
+            } catch (Exception e) {
+                if(e instanceof NullPointerException){
+                    ((MainActivity) activity).adapterChat.addItem(new ModelMessage("Couldn't hear you, try again !", "bot", "bot"));
+                }
+                e.printStackTrace();
+            }
         }
     }
 
