@@ -39,6 +39,14 @@ public class AdapterCard extends RecyclerView.Adapter<AdapterCard.MyViewHolder> 
     @Override
     public AdapterCard.MyViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.recharge_details_card, parent, false);
+        if(rechargeDetailsArrayList.size()>0){
+            if(!rechargeDetailsArrayList.get(0).getRechargeType().equals("Calls")){
+                view.findViewById(R.id.rechargeUsage).setVisibility(view.GONE);
+            }
+        }
+//        if(((TextView) view.findViewById(R.id.recharge_usage)).getText().toString().equals("0")) {
+//            view.findViewById(R.id.rechargeUsage).setVisibility(view.GONE);
+//        }
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -57,6 +65,8 @@ public class AdapterCard extends RecyclerView.Adapter<AdapterCard.MyViewHolder> 
         RechargeDetails rechargeDetails = rechargeDetailsArrayList.get(position);
 
         holder.rechargeAmount.setText("₹" + rechargeDetails.getPrice());
+        holder.rechargeType.setText(rechargeDetails.getRechargeType());
+        holder.rechargeLimit.setText(rechargeDetails.getRechargeLimit());
         holder.rechargeUsage.setText(rechargeDetails.getRechargeUsage());
         holder.rechargeValidity.setText(rechargeDetails.getRechargeValidity());
     }
@@ -70,13 +80,14 @@ public class AdapterCard extends RecyclerView.Adapter<AdapterCard.MyViewHolder> 
 
     public class MyViewHolder extends RecyclerView.ViewHolder{
 
-        TextView rechargeAmount, rechargeType, rechargeUsage, rechargeValidity;
+        TextView rechargeAmount, rechargeType, rechargeLimit, rechargeUsage, rechargeValidity;
 
         private MyViewHolder(@NonNull View itemView) {
             super(itemView);
 
             rechargeAmount = itemView.findViewById(R.id.recharge_amount);
             rechargeType = itemView.findViewById(R.id.recharge_type);
+            rechargeLimit = itemView.findViewById(R.id.recharge_limit);
             rechargeUsage = itemView.findViewById(R.id.recharge_usage);
             rechargeValidity = itemView.findViewById(R.id.recharge_validity);
         }

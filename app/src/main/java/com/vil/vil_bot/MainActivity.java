@@ -249,21 +249,21 @@ public class MainActivity extends AppCompatActivity {
         if(!msg.isEmpty()){
             adapterChat.addItem(new ModelMessage(msg, "user", "user"));
 
-            if(responseIntent.equals("recharge.phone.upgrade") &&
-                    modelMessageArrayList.get(modelMessageArrayList.size()-1).getText().equals("Yes")) {
-                // rechargeunlimitedconfirmationyes Rs <amnt>
-                String text = modelMessageArrayList.get(modelMessageArrayList.size()-2).getText();
+            if(modelMessageArrayList.get(modelMessageArrayList.size()-1).getText().equals("Yes")) {
+                String text = modelMessageArrayList.get(modelMessageArrayList.size() - 2).getText();
                 String price = text.substring(text.lastIndexOf(" ") + 2).replaceAll("\\?", "");
-                text = "rechargeunlimitedconfirmationyes ₹" + price;
-//                Log.e("checkForYes", price);
-//                Log.e("checkForText", text);
-                QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(text).setLanguageCode("en")).build();
-                new RequestTask(MainActivity.this, sessionName, client, input, text, 0).execute();
+
+                if (responseIntent.equals("recharge.phone.upgrade")) {
+                   msg = "rechargeunlimitedconfirmationyes ₹" + price;
+                } else if (responseIntent.equals("sms-plan-upgrade")) {
+                   msg = "rechargesmsconfirmationyes ₹" + price;
+                } else if (responseIntent.equals("talktime-plan-upgrade")) {
+                    msg = "rechargetalktimeconfirmationyes ₹" + price;
+                }
             }
-            else {
-                QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(msg).setLanguageCode("en")).build();
-                new RequestTask(MainActivity.this, sessionName, client, input, msg, 0).execute();
-            }
+            QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(msg).setLanguageCode("en")).build();
+            new RequestTask(MainActivity.this, sessionName, client, input, msg, 0).execute();
+
             recyclerView.scrollToPosition(adapterChat.getItemCount() - 1);
 
             InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -460,7 +460,6 @@ public class MainActivity extends AppCompatActivity {
                         //animateVoice((float) (audioChunk.maxAmplitude() / 200.0));
                     }
                 }), file());
-
 
     }
 

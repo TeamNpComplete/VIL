@@ -67,29 +67,59 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
             Drawable drawable = context.getResources().getDrawable(R.drawable.white_rectangle);
             holder.linearLayout.setBackground(drawable);
 
-            ArrayList<RechargeDetails> rechargeDetailsArrayList = new ArrayList<>();
+            ArrayList<RechargeDetails> rechargeDetailsArrayList;
             if(modelMessage.getIntent().equals("recharge.phone.upgrade")) {
                 SQLiteDatabase database = context.openOrCreateDatabase("TeleData",0, null);
                 Cursor c = database.rawQuery("SELECT * FROM Unlimited", null);
                 c.moveToFirst();
+                rechargeDetailsArrayList = new ArrayList<>();
                 do {
                     RechargeDetails rechargeDetails = new RechargeDetails();
                     rechargeDetails.setPrice(c.getInt(c.getColumnIndex("cost")));
-                    rechargeDetails.setRechargeValidity(c.getString(c.getColumnIndex("validity")));
+                    rechargeDetails.setRechargeType("Calls");
+                    rechargeDetails.setRechargeLimit("Unlimited");
                     rechargeDetails.setRechargeUsage(c.getString(c.getColumnIndex("data")));
-                    /*Log.d("Checking", "In Adapter Chat");
-                    Log.e("Cost", c.getString(c.getColumnIndex("cost")));
-                    Log.e("Validity", c.getString(c.getColumnIndex("validity")));
-                    Log.e("NOS", c.getString(c.getColumnIndex("no_of_sms")));*/
+                    rechargeDetails.setRechargeValidity(c.getString(c.getColumnIndex("validity")));
                     rechargeDetailsArrayList.add(rechargeDetails);
                 }while(c.moveToNext());
                 c.close();
-
+            }
+            else if(modelMessage.getIntent().equals("sms-plan-upgrade")) {
+                SQLiteDatabase database = context.openOrCreateDatabase("TeleData",0, null);
+                Cursor c = database.rawQuery("SELECT * FROM SMS", null);
+                c.moveToFirst();
+                rechargeDetailsArrayList = new ArrayList<>();
+                do {
+                    RechargeDetails rechargeDetails = new RechargeDetails();
+                    rechargeDetails.setPrice(c.getInt(c.getColumnIndex("cost")));
+                    rechargeDetails.setRechargeType("SMS");
+                    rechargeDetails.setRechargeLimit(String.valueOf(c.getInt(c.getColumnIndex("no_of_sms"))));
+                    rechargeDetails.setRechargeValidity(c.getString(c.getColumnIndex("validity")));
+                    rechargeDetailsArrayList.add(rechargeDetails);
+                }while(c.moveToNext());
+                c.close();
+            }
+            else if(modelMessage.getIntent().equals("talktime-plan-upgrade")) {
+                SQLiteDatabase database = context.openOrCreateDatabase("TeleData",0, null);
+                Cursor c = database.rawQuery("SELECT * FROM Talktime", null);
+                c.moveToFirst();
+                rechargeDetailsArrayList = new ArrayList<>();
+                do {
+                    RechargeDetails rechargeDetails = new RechargeDetails();
+                    rechargeDetails.setPrice(c.getInt(c.getColumnIndex("cost")));
+                    rechargeDetails.setRechargeType("Talktime");
+                    rechargeDetails.setRechargeLimit(String.valueOf(c.getFloat(c.getColumnIndex("talktime"))));
+                    rechargeDetails.setRechargeValidity(c.getString(c.getColumnIndex("validity")));
+                    rechargeDetailsArrayList.add(rechargeDetails);
+                }while(c.moveToNext());
+                c.close();
+            }
+            else {
+                rechargeDetailsArrayList = new ArrayList<>();
             }
             adapterCard = new AdapterCard(rechargeDetailsArrayList, modelMessageArrayList, "bot", recyclerView);
             holder.recyclerViewBill.setAdapter(adapterCard);
             holder.recyclerViewBill.setRecycledViewPool(recycledViewPool);
-
         }
         else {
             // message by user
@@ -104,6 +134,11 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
             holder.card.setLayoutParams(layoutParams);
             Drawable drawable = context.getResources().getDrawable(R.drawable.blue_rectangle);
             holder.linearLayout.setBackground(drawable);
+
+            ArrayList<RechargeDetails> rechargeDetailsArrayList= new ArrayList<>();
+            adapterCard = new AdapterCard(rechargeDetailsArrayList, modelMessageArrayList, "bot", recyclerView);
+            holder.recyclerViewBill.setAdapter(adapterCard);
+            holder.recyclerViewBill.setRecycledViewPool(recycledViewPool);
         }
 
         holder.message.setText(modelMessage.getText());
