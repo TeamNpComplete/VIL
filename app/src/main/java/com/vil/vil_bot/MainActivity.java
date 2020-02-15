@@ -13,6 +13,7 @@ import android.media.MediaRecorder;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -59,6 +60,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import omrecorder.AudioChunk;
@@ -85,11 +87,13 @@ import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
 
-    static String host = "http://192.168.32.135:5000";
+    static String host = "http://10.10.40.36:5000";
     static File audioFile = null;
 
     SessionsClient client;
     SessionName sessionName;
+
+    TextToSpeech textToSpeech;
 
     EditText query;
     String uuid;
@@ -167,6 +171,15 @@ public class MainActivity extends AppCompatActivity {
 
             client = SessionsClient.create(settings);
             sessionName = SessionName.of(projectId, uuid);
+
+            textToSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+                @Override
+                public void onInit(int status) {
+                    if(status != TextToSpeech.ERROR){
+                        textToSpeech.setLanguage(Locale.forLanguageTag(langCode));
+                    }
+                }
+            });
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -270,6 +283,10 @@ public class MainActivity extends AppCompatActivity {
 //            String botReply = response.getQueryResult().getFulfillmentText();
             String intent = response.getQueryResult().getIntent().getDisplayName();
             Log.e("Intent", intent);
+
+            if(textToSpeech != null){
+                textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+            }
 
             adapterChat.addItem(new ModelMessage(text, intent, "bot"));
 
@@ -587,6 +604,7 @@ public class MainActivity extends AppCompatActivity {
                     return new JSONObject(EntityUtils.toString(response.getEntity()));
                 } catch (Exception e) {
                     // show error
+                    e.printStackTrace();
                 }
 
                 return null;
@@ -603,9 +621,10 @@ public class MainActivity extends AppCompatActivity {
             try {
 //                Toast.makeText(activity, resp.getString("english"), Toast.LENGTH_SHORT).show();
 //                Log.e("STOP", resp.getString("english"));
-                ((MainActivity) activity).adapterChat.addItem(new ModelMessage(resp.getString("source_lang"), "user", "user"));
-                QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(resp.getString("source_lang")).setLanguageCode("en")).build();
-                new RequestTask(activity, sessionName, client, input, resp.getString("source_lang"),0).execute();
+//                ((MainActivity) activity).adapterChat.addItem(new ModelMessage(resp.getString("source_lang"), "user", "user"));
+//                QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(resp.getString("source_lang")).setLanguageCode("en")).build();
+//                new RequestTask(activity, sessionName, client, input, resp.getString("source_lang"),0).execute();
+                ((MainActivity)activity).query.setText(resp.getString("source_lang"));
 
             } catch (Exception e) {
                 if(e instanceof NullPointerException){
