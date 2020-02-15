@@ -1,6 +1,8 @@
 package com.vil.vil_bot.adapters;
 
 import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
@@ -18,8 +20,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.cardview.widget.CardView;
 
+import com.vil.vil_bot.MainActivity;
 import com.vil.vil_bot.R;
 import com.vil.vil_bot.models.ModelMessage;
+import com.vil.vil_bot.models.RechargeDetails;
 
 import java.util.ArrayList;
 
@@ -27,13 +31,15 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
 
     private Context context;
     private ArrayList<ModelMessage> modelMessageArrayList;
+    private RecyclerView recyclerView;
     private RecyclerView.RecycledViewPool recycledViewPool;
-    private BillAdapter billAdapter;
+    private AdapterCard adapterCard;
 
-    public AdapterChat(Context context, ArrayList<ModelMessage> modelMessageArrayList){
+    public AdapterChat(Context context, ArrayList<ModelMessage> modelMessageArrayList, RecyclerView recyclerView){
         this.context = context;
         this.modelMessageArrayList = modelMessageArrayList;
         recycledViewPool = new RecyclerView.RecycledViewPool();
+        this.recyclerView = recyclerView;
     }
 
     @NonNull
@@ -49,7 +55,6 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
 
         if(!modelMessage.getSenderName().equals("user")){
             // message by bot
-//            holder.message.setTextColor(Color.parseColor("#ffffff"));
             holder.message.setTextColor(Color.parseColor("#000000"));
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             layoutParams.gravity = Gravity.LEFT;
@@ -61,16 +66,33 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
             holder.card.setLayoutParams(layoutParams);
             Drawable drawable = context.getResources().getDrawable(R.drawable.white_rectangle);
             holder.linearLayout.setBackground(drawable);
-            //holder.time.setTextColor(Color.parseColor("#696969"));
+
+            ArrayList<RechargeDetails> rechargeDetailsArrayList = new ArrayList<>();
             if(modelMessage.getIntent().equals("recharge.phone.upgrade")) {
-                billAdapter = new BillAdapter();
-                holder.recyclerViewBill.setAdapter(billAdapter);
-                holder.recyclerViewBill.setRecycledViewPool(recycledViewPool);
+                SQLiteDatabase database = context.openOrCreateDatabase("TeleData",0, null);
+                Cursor c = database.rawQuery("SELECT * FROM Unlimited", null);
+                c.moveToFirst();
+                do {
+                    RechargeDetails rechargeDetails = new RechargeDetails();
+                    rechargeDetails.setPrice(c.getInt(c.getColumnIndex("cost")));
+                    rechargeDetails.setRechargeValidity(c.getString(c.getColumnIndex("validity")));
+                    rechargeDetails.setRechargeUsage(c.getString(c.getColumnIndex("data")));
+                    /*Log.d("Checking", "In Adapter Chat");
+                    Log.e("Cost", c.getString(c.getColumnIndex("cost")));
+                    Log.e("Validity", c.getString(c.getColumnIndex("validity")));
+                    Log.e("NOS", c.getString(c.getColumnIndex("no_of_sms")));*/
+                    rechargeDetailsArrayList.add(rechargeDetails);
+                }while(c.moveToNext());
+                c.close();
+
             }
+            adapterCard = new AdapterCard(rechargeDetailsArrayList, modelMessageArrayList, "bot", recyclerView);
+            holder.recyclerViewBill.setAdapter(adapterCard);
+            holder.recyclerViewBill.setRecycledViewPool(recycledViewPool);
+
         }
         else {
             // message by user
-//            holder.message.setTextColor(Color.parseColor("#000000"));
             holder.message.setTextColor(Color.parseColor("#ffffff"));
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             layoutParams.gravity = Gravity.RIGHT;
@@ -82,11 +104,9 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
             holder.card.setLayoutParams(layoutParams);
             Drawable drawable = context.getResources().getDrawable(R.drawable.blue_rectangle);
             holder.linearLayout.setBackground(drawable);
-            //holder.time.setTextColor(Color.parseColor("#e4e4e4"));
         }
 
         holder.message.setText(modelMessage.getText());
-        //holder.time.setText(modelMessage.getDate().substring(0, 16).trim());
     }
 
     @Override
@@ -102,8 +122,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
         RecyclerView recyclerViewBill;
         LinearLayoutManager verticalManager = new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false);
 
-        public MyViewHolder(@NonNull View itemView) {
-
+        private MyViewHolder(@NonNull View itemView) {
             super(itemView);
 
             message = itemView.findViewById(R.id.chat_message_text);

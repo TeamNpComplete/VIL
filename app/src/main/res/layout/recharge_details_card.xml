@@ -6,6 +6,8 @@
     android:id="@+id/chat_details_card"
     app:cardCornerRadius="15dp"
     android:layout_marginLeft="10dp"
+    android:layout_marginTop="5dp"
+    android:layout_marginBottom="5dp"
     app:cardElevation="5dp">
 
     <LinearLayout
