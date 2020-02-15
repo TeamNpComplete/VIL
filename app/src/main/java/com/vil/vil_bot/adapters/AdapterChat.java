@@ -49,7 +49,8 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
 
         if(!modelMessage.getSenderName().equals("user")){
             // message by bot
-            holder.message.setTextColor(Color.parseColor("#ffffff"));
+//            holder.message.setTextColor(Color.parseColor("#ffffff"));
+            holder.message.setTextColor(Color.parseColor("#000000"));
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             layoutParams.gravity = Gravity.LEFT;
             float factor = holder.card.getContext().getResources().getDisplayMetrics().density;
@@ -58,7 +59,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
             layoutParams.topMargin = (int)(8 * factor);
             layoutParams.bottomMargin = (int)(8 * factor);
             holder.card.setLayoutParams(layoutParams);
-            Drawable drawable = context.getResources().getDrawable(R.drawable.blue_rectangle);
+            Drawable drawable = context.getResources().getDrawable(R.drawable.white_rectangle);
             holder.linearLayout.setBackground(drawable);
             //holder.time.setTextColor(Color.parseColor("#696969"));
             if(modelMessage.getIntent().equals("recharge.phone.upgrade")) {
@@ -69,7 +70,8 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
         }
         else {
             // message by user
-            holder.message.setTextColor(Color.parseColor("#000000"));
+//            holder.message.setTextColor(Color.parseColor("#000000"));
+            holder.message.setTextColor(Color.parseColor("#ffffff"));
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             layoutParams.gravity = Gravity.RIGHT;
             float factor = holder.card.getContext().getResources().getDisplayMetrics().density;
@@ -78,7 +80,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
             layoutParams.topMargin = (int)(8 * factor);
             layoutParams.bottomMargin = (int)(8 * factor);
             holder.card.setLayoutParams(layoutParams);
-            Drawable drawable = context.getResources().getDrawable(R.drawable.white_rectangle);
+            Drawable drawable = context.getResources().getDrawable(R.drawable.blue_rectangle);
             holder.linearLayout.setBackground(drawable);
             //holder.time.setTextColor(Color.parseColor("#e4e4e4"));
         }

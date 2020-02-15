@@ -12,8 +12,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.vil.vil_bot.R;
 
+import java.util.ArrayList;
+
 public class BillAdapter extends RecyclerView.Adapter<BillAdapter.MyViewHolder> {
 
+//    public BillAdapter(ArrayList<>)
 
     @NonNull
     @Override
@@ -38,7 +41,6 @@ public class BillAdapter extends RecyclerView.Adapter<BillAdapter.MyViewHolder> 
         TextView rechargeAmnt, rechargeType, rechargeUsage, rechargeValidity;
 
         public MyViewHolder(@NonNull View itemView) {
-
             super(itemView);
 
           rechargeAmnt = itemView.findViewById(R.id.recharge_amount);
