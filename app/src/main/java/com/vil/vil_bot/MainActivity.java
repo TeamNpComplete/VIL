@@ -102,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
     RippleBackground rippleBackground;
     FloatingActionButton sendButton;
     SQLiteDatabase database;
+    String responseIntent;
 
     boolean isRecording = true;
 
@@ -135,6 +136,7 @@ public class MainActivity extends AppCompatActivity {
 
         Intent i = getIntent();
         langCode = i.getStringExtra("langCode");
+        responseIntent = "";
 
         if(langCode == null){
             langCode = getSharedPreferences("BOT_CONFIG", MODE_PRIVATE).getString("langCode", null);
@@ -213,7 +215,7 @@ public class MainActivity extends AppCompatActivity {
         }).onSameThread().check();
 
         recyclerView = findViewById(R.id.chat_recycler_view);
-        adapterChat = new AdapterChat(this, modelMessageArrayList);
+        adapterChat = new AdapterChat(this, modelMessageArrayList, recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapterChat);
 
@@ -230,8 +232,6 @@ public class MainActivity extends AppCompatActivity {
         //--------------
         database = this.openOrCreateDatabase("TeleData",0, null);
 
-
-
         //--------------
         if(!checkForTableExists(database))
             createDatabase();
@@ -242,23 +242,31 @@ public class MainActivity extends AppCompatActivity {
         String msg = query.getText().toString().trim();
 
 //        rippleBackground.startRippleAnimation();
-
-        msg = msg.trim();
-
-        if(msg.isEmpty()){
-
-        } else {
+        if(!msg.isEmpty()){
             adapterChat.addItem(new ModelMessage(msg, "user", "user"));
-            QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(msg).setLanguageCode("en")).build();
-            new RequestTask(MainActivity.this, sessionName, client, input, msg,0).execute();
 
+            if(responseIntent.equals("recharge.phone.upgrade") &&
+                    modelMessageArrayList.get(modelMessageArrayList.size()-1).getText().equals("Yes")) {
+                // rechargeunlimitedconfirmationyes Rs <amnt>
+                String text = modelMessageArrayList.get(modelMessageArrayList.size()-2).getText();
+                String price = text.substring(text.lastIndexOf(" ") + 2).replaceAll("\\?", "");
+                text = "rechargeunlimitedconfirmationyes " + price + " Rs";
+//                Log.e("checkForYes", price);
+//                Log.e("checkForText", text);
+                QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(text).setLanguageCode("en")).build();
+                new RequestTask(MainActivity.this, sessionName, client, input, text, 0).execute();
+            }
+            else {
+                QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(msg).setLanguageCode("en")).build();
+                new RequestTask(MainActivity.this, sessionName, client, input, msg, 0).execute();
+            }
             recyclerView.scrollToPosition(adapterChat.getItemCount() - 1);
 
             InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
             try {
                 imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
             }catch (NullPointerException e){
-
+                e.printStackTrace();
             }
         }
     }
@@ -267,12 +275,12 @@ public class MainActivity extends AppCompatActivity {
         if(response != null) {
             if(text == null)
                 text = response.getQueryResult().getFulfillmentText();
-//            String botReply = response.getQueryResult().getFulfillmentText();
-            String intent = response.getQueryResult().getIntent().getDisplayName();
-            Log.e("Intent", intent);
 
-            adapterChat.addItem(new ModelMessage(text, intent, "bot"));
+//            String responseIntent = response.getQueryResult().getIntent().getDisplayName();
+            responseIntent = response.getQueryResult().getIntent().getDisplayName();
+            Log.e("Intent", responseIntent);
 
+            adapterChat.addItem(new ModelMessage(text, responseIntent, "bot"));
             recyclerView.scrollToPosition(adapterChat.getItemCount() - 1);
 
             InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -350,7 +358,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("Lang_Check", result);
             }
 
-            Log.e("Lang_Check", "Translated");
             try{
                 DetectIntentRequest detectIntentRequest = DetectIntentRequest.newBuilder().setSession(sessionName.toString())
                         .setQueryInput(input).build();
@@ -365,14 +372,13 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(DetectIntentResponse detectIntentResponse) {
-            String result = null;
             String langCode = ((MainActivity)activity).langCode;
             if(!langCode.equals("en-IN")){
                 TranslateTask task = new TranslateTask(activity, sessionName, client, input, detectIntentResponse.getQueryResult().getFulfillmentText(), requestType);
                 task.setResponse(detectIntentResponse);
                 task.execute();
             } else {
-                ((MainActivity)activity).callback(detectIntentResponse, result);
+                ((MainActivity)activity).callback(detectIntentResponse, null);
             }
             Log.e("Lang_Check", "Translated Again");
         }
@@ -456,10 +462,10 @@ public class MainActivity extends AppCompatActivity {
 
     private PullableSource mic() {
         return new PullableSource.Default(
-                new AudioRecordConfig.Default(
-                        MediaRecorder.AudioSource.MIC, AudioFormat.ENCODING_PCM_16BIT,
-                        AudioFormat.CHANNEL_IN_MONO, 22050
-                )
+            new AudioRecordConfig.Default(
+                MediaRecorder.AudioSource.MIC, AudioFormat.ENCODING_PCM_16BIT,
+                AudioFormat.CHANNEL_IN_MONO, 22050
+            )
         );
     }
 
@@ -552,7 +558,6 @@ public class MainActivity extends AppCompatActivity {
                 ((MainActivity)activity).callback(response, s);
         }
     }
-
     static class SpeechToTextTask extends AsyncTask<Void, Void, JSONObject>{
 
         Activity activity;
@@ -616,9 +621,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     private boolean checkForTableExists(SQLiteDatabase db){
-        String sql = "SELECT  name FROM sqlite_master WHERE type='table' AND name='SMS'";
+        String sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='SMS'";
         Cursor mCursor = db.rawQuery(sql, null);
         if (mCursor.getCount() > 0) {
             return true;

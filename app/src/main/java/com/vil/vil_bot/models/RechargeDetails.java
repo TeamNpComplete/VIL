@@ -7,6 +7,10 @@ public class RechargeDetails {
     String rechargeUsage;
     String rechargeValidity;
 
+    public RechargeDetails() {
+
+    }
+
     public RechargeDetails(int price, String rechargeType, String rechargeLimit, String rechargeUsage, String rechargeValidity) {
         this.price = price;
         this.rechargeType = rechargeType;
