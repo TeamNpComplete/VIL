@@ -3,16 +3,16 @@ package com.vil.vil_bot;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.media.AudioFormat;
 import android.media.MediaRecorder;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
+import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -49,6 +49,7 @@ import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 import com.skyfishjy.library.RippleBackground;
 import com.vil.vil_bot.adapters.AdapterChat;
 import com.vil.vil_bot.models.ModelMessage;
+import com.vil.vil_bot.services.VoiceRecogService;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -81,12 +82,13 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 
 public class MainActivity extends AppCompatActivity {
 
+
+    public static String langCode = "en-IN";
     static String host = "http://10.10.40.36:5000";
     static File audioFile = null;
 
@@ -94,10 +96,10 @@ public class MainActivity extends AppCompatActivity {
     SessionName sessionName;
 
     TextToSpeech textToSpeech;
+    SpeechRecognizer speechRecognizer;
 
     EditText query;
     String uuid;
-    String langCode;
 
     RecyclerView recyclerView;
     ArrayList<ModelMessage> modelMessageArrayList = new ArrayList<>();
@@ -139,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
 
         Intent i = getIntent();
         langCode = i.getStringExtra("langCode");
+        String queryString = i.getStringExtra("QUERY");
 
         if(langCode == null){
             langCode = getSharedPreferences("BOT_CONFIG", MODE_PRIVATE).getString("langCode", null);
@@ -243,12 +246,16 @@ public class MainActivity extends AppCompatActivity {
         //--------------
         database = this.openOrCreateDatabase("TeleData",0, null);
 
-
-
         //--------------
         if(!checkForTableExists(database))
             createDatabase();
 
+        if(!isMyServiceRunning(VoiceRecogService.class)){
+            startService(new Intent(MainActivity.this, VoiceRecogService.class));
+            Toast.makeText(this, "Service Started !", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Service is already running !", Toast.LENGTH_SHORT).show();
+        }
     }
 
     public void buttonClicked() {
@@ -645,5 +652,16 @@ public class MainActivity extends AppCompatActivity {
         mCursor.close();
         return false;
     }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
 
