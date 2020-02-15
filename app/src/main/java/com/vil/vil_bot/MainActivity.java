@@ -10,6 +10,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.media.AudioFormat;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -23,6 +24,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
@@ -103,10 +105,12 @@ public class MainActivity extends AppCompatActivity {
     FloatingActionButton sendButton;
     SQLiteDatabase database;
     String responseIntent;
+    String GOOGLE_PAY_PACKAGE_NAME = "com.google.android.apps.nbu.paisa.user";
 
     boolean isRecording = true;
 
     Recorder recorder;
+    final int UPI_PAYMENT = 0;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -133,7 +137,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         Intent i = getIntent();
         langCode = i.getStringExtra("langCode");
         responseIntent = "";
@@ -177,7 +180,6 @@ public class MainActivity extends AppCompatActivity {
         query.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
             }
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -216,6 +218,7 @@ public class MainActivity extends AppCompatActivity {
 
         recyclerView = findViewById(R.id.chat_recycler_view);
         adapterChat = new AdapterChat(this, modelMessageArrayList, recyclerView);
+        recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapterChat);
 
@@ -248,13 +251,31 @@ public class MainActivity extends AppCompatActivity {
             if(responseIntent.equals("recharge.phone.upgrade") &&
                     modelMessageArrayList.get(modelMessageArrayList.size()-1).getText().equals("Yes")) {
                 // rechargeunlimitedconfirmationyes Rs <amnt>
-                String text = modelMessageArrayList.get(modelMessageArrayList.size()-2).getText();
-                String price = text.substring(text.lastIndexOf(" ") + 2).replaceAll("\\?", "");
-                text = "rechargeunlimitedconfirmationyes " + price + " Rs";
-//                Log.e("checkForYes", price);
-//                Log.e("checkForText", text);
-                QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(text).setLanguageCode("en")).build();
-                new RequestTask(MainActivity.this, sessionName, client, input, text, 0).execute();
+                //-------------
+
+                int GOOGLE_PAY_REQUEST_CODE = 123;
+
+                Uri uri =
+                        new Uri.Builder()
+                                .scheme("upi")
+                                .authority("pay")
+                                .appendQueryParameter("pa", "adityagunjal1365@okicici")
+                                .appendQueryParameter("pn", "Aditya Gunjal")
+                                //.appendQueryParameter("mc", "your-merchant-code")
+                                // .appendQueryParameter("tr", "your-transaction-ref-id")
+                                //.appendQueryParameter("tn", "your-transaction-note")
+                                .appendQueryParameter("am", "1")
+                                .appendQueryParameter("cu", "INR")
+                                //.appendQueryParameter("url", "your-transaction-url")
+                                .build();
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(uri);
+                intent.setPackage(GOOGLE_PAY_PACKAGE_NAME);
+                this.startActivityForResult(intent, GOOGLE_PAY_REQUEST_CODE);
+
+                //-------------
+
+
             }
             else {
                 QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(msg).setLanguageCode("en")).build();
@@ -269,6 +290,27 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode==123){
+            if (data.getStringExtra("response").contains("Status=FAILURE")){
+
+            }else{
+                String text = modelMessageArrayList.get(modelMessageArrayList.size()-2).getText();
+                String price = text.substring(text.lastIndexOf(" ") + 2).replaceAll("\\?", "");
+                text = "rechargeunlimitedconfirmationyes " + price + " Rs";
+//                Log.e("checkForYes", price);
+//                Log.e("checkForText", text);
+                QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(text).setLanguageCode("en")).build();
+                new RequestTask(MainActivity.this, sessionName, client, input, text, 0).execute();
+            }
+        }
+
+
     }
 
     public void callback(DetectIntentResponse response, String text){
