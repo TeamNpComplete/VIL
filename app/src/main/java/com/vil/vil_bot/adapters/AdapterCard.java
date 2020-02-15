@@ -65,7 +65,7 @@ public class AdapterCard extends RecyclerView.Adapter<AdapterCard.MyViewHolder> 
     public int getItemCount() {
         if(!sender.equals("bot"))
             return 0;
-        return rechargeDetailsArrayList.size();
+        return (rechargeDetailsArrayList.size()>4)?4:rechargeDetailsArrayList.size();
     }
 
     public class MyViewHolder extends RecyclerView.ViewHolder{

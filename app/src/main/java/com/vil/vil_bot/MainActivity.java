@@ -85,7 +85,7 @@ import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
 
-    static String host = "http://192.168.32.135:5000";
+    static String host = "http://10.10.40.36:5000";
     static File audioFile = null;
 
     SessionsClient client;
@@ -117,11 +117,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         super.onOptionsItemSelected(item);
+        Intent intent;
         switch (item.getItemId()) {
             case R.id.changeLanguage:
-                Intent intent = new Intent(this, ChangeLanguage.class);
+                intent = new Intent(this, ChangeLanguage.class);
                 startActivity(intent);
                 return true;
+            case R.id.changePreferences:
+                intent = new Intent(this, ChangeVoiceAssistant.class);
+                startActivity(intent);
             case R.id.aboutUs:
                 //about us code here
                 return true;
@@ -250,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
                 // rechargeunlimitedconfirmationyes Rs <amnt>
                 String text = modelMessageArrayList.get(modelMessageArrayList.size()-2).getText();
                 String price = text.substring(text.lastIndexOf(" ") + 2).replaceAll("\\?", "");
-                text = "rechargeunlimitedconfirmationyes " + price + " Rs";
+                text = "rechargeunlimitedconfirmationyes ₹" + price;
 //                Log.e("checkForYes", price);
 //                Log.e("checkForText", text);
                 QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(text).setLanguageCode("en")).build();
