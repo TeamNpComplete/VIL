@@ -22,49 +22,49 @@ public class ChangeLanguage extends AppCompatActivity {
             case R.id.english:
                 if (checked)
                     str="en-IN";
-                intent.putExtra("langCode",str);
+                intent.putExtra("LANGUAGE_CODE",str);
                 startActivity(intent);
                 finish();
                 break;
             case R.id.hindi:
                 if (checked)
                     str="hi-IN";
-                intent.putExtra("langCode",str);
+                intent.putExtra("LANGUAGE_CODE",str);
                 startActivity(intent);
                 finish();
                 break;
             case R.id.marathi:
                 if (checked)
                     str="mr-IN";
-                intent.putExtra("langCode",str);
+                intent.putExtra("LANGUAGE_CODE",str);
                 startActivity(intent);
                 finish();
                 break;
             case R.id.gujarati:
                 if (checked)
                     str="gu-IN";
-                intent.putExtra("langCode",str);
+                intent.putExtra("LANGUAGE_CODE",str);
                 startActivity(intent);
                 finish();
                 break;
             case R.id.kannada:
                 if (checked)
                     str="kn-IN";
-                intent.putExtra("langCode",str);
+                intent.putExtra("LANGUAGE_CODE",str);
                 startActivity(intent);
                 finish();
                 break;
             case R.id.punjabi:
                 if (checked)
                     str="pa-IN";
-                intent.putExtra("langCode",str);
+                intent.putExtra("LANGUAGE_CODE",str);
                 startActivity(intent);
                 finish();
                 break;
             case R.id.malyalam:
                 if (checked)
                     str="ml-IN";
-                intent.putExtra("langCode",str);
+                intent.putExtra("LANGUAGE_CODE",str);
                 startActivity(intent);
                 finish();
                 break;

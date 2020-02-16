@@ -8,7 +8,7 @@ public class RechargeDetails {
     String rechargeValidity;
 
     public RechargeDetails() {
-
+        rechargeUsage = "0";
     }
 
     public RechargeDetails(int price, String rechargeType, String rechargeLimit, String rechargeUsage, String rechargeValidity) {

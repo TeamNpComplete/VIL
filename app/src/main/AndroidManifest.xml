@@ -20,7 +20,29 @@
             android:enabled="true"
             android:exported="true"></service>
 
+        <service android:name=".services.VoiceListenerService"
+            android:enabled="true"
+            android:exported="true"/>
+
+        <receiver
+            android:name=".services.Restarter"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="restartservice" />
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name=".services.TextReciever"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="textrecieved"/>
+            </intent-filter>
+        </receiver>
+
         <activity android:name=".ChangeLanguage" />
+        <activity android:name=".ChangeVoiceAssistant"></activity>
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

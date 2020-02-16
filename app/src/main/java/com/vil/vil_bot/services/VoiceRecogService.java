@@ -1,5 +1,7 @@
 package com.vil.vil_bot.services;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -12,6 +14,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -139,7 +142,7 @@ public class VoiceRecogService extends Service
         }
         catch (RemoteException e)
         {
-
+            e.printStackTrace();
         }
         return  START_STICKY;
     }
@@ -245,6 +248,7 @@ public class VoiceRecogService extends Service
 
             if(text.contains("vodafone") || text.contains("vodaphone")){
                 dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                dialogIntent.addFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
                 startActivity(dialogIntent);
             }
 

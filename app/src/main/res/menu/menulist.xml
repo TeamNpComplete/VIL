@@ -7,6 +7,10 @@
         android:itemBackground="@color/white"
         android:title="Change Language" />
     <item
+        android:id="@+id/changePreferences"
+        android:itemBackground="@color/white"
+        android:title="Change Preferences" />
+    <item
         android:id="@+id/aboutUs"
         android:itemBackground="@color/white"
         android:title="About Us" />

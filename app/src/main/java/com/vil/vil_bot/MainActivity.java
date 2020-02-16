@@ -4,8 +4,12 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -13,6 +17,7 @@ import android.media.AudioFormat;
 import android.media.MediaRecorder;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
@@ -50,6 +55,7 @@ import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 import com.skyfishjy.library.RippleBackground;
 import com.vil.vil_bot.adapters.AdapterChat;
 import com.vil.vil_bot.models.ModelMessage;
+import com.vil.vil_bot.services.VoiceListenerService;
 import com.vil.vil_bot.services.VoiceRecogService;
 
 import java.io.BufferedReader;
@@ -90,15 +96,17 @@ import org.json.JSONObject;
 public class MainActivity extends AppCompatActivity {
 
 
+    BroadcastReceiver textReciver;
+
+
     public static String langCode = "en-IN";
-    static String host = "http://10.10.40.36:5000";
+    public static String host = "http://10.10.40.36:5000";
     static File audioFile = null;
 
     SessionsClient client;
     SessionName sessionName;
 
     TextToSpeech textToSpeech;
-    SpeechRecognizer speechRecognizer;
 
     EditText query;
     String uuid;
@@ -111,10 +119,11 @@ public class MainActivity extends AppCompatActivity {
     FloatingActionButton sendButton;
     SQLiteDatabase database;
     String responseIntent;
+    String assisantStatus = null;
 
     boolean isRecording = true;
 
-    Recorder recorder;
+    //Recorder recorder;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -125,11 +134,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         super.onOptionsItemSelected(item);
+        Intent intent;
         switch (item.getItemId()) {
             case R.id.changeLanguage:
-                Intent intent = new Intent(this, ChangeLanguage.class);
+                intent = new Intent(this, ChangeLanguage.class);
                 startActivity(intent);
                 return true;
+            case R.id.changePreferences:
+                intent = new Intent(this, ChangeVoiceAssistant.class);
+                startActivity(intent);
             case R.id.aboutUs:
                 //about us code here
                 return true;
@@ -143,8 +156,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Intent i = getIntent();
-        langCode = i.getStringExtra("langCode");
+        langCode = i.getStringExtra("LANGUAGE_CODE");
         String queryString = i.getStringExtra("QUERY");
+        if(i.hasExtra("ASSISTANT_STATUS")){
+            assisantStatus = i.getStringExtra("ASSISTANT_STATUS");
+        } else {
+            assisantStatus = getSharedPreferences("ASSISTANT_STATUS", MODE_PRIVATE).getString("status", "disabled");
+        }
+
         responseIntent = "";
 
         if(langCode == null){
@@ -220,7 +239,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPermissionsChecked (MultiplePermissionsReport report){
                 if (report.areAllPermissionsGranted()) {
-
+//                    if(isMyServiceRunning(VoiceRecogService.class)){
+//                        stopService(new Intent(MainActivity.this, VoiceRecogService.class));
+//                        Toast.makeText(MainActivity.this, "Service Stopped !", Toast.LENGTH_SHORT).show();
+//                    } else {
+//                        Toast.makeText(MainActivity.this, "Service is not running !", Toast.LENGTH_SHORT).show();
+//                    }
+//                    startService(new Intent(MainActivity.this, VoiceListenerService.class));
+//                    registerReceiver();
                 }
                 if (report.isAnyPermissionPermanentlyDenied()) {
                     Toast.makeText(MainActivity.this, "Permission Denied !", Toast.LENGTH_SHORT).show();
@@ -239,7 +265,7 @@ public class MainActivity extends AppCompatActivity {
 
         setListenerToRootView();
 
-        setupRecorder();
+        //setupRecorder();
 
         sendButton.setOnTouchListener(touchListener);
 
@@ -254,12 +280,38 @@ public class MainActivity extends AppCompatActivity {
         if(!checkForTableExists(database))
             createDatabase();
 
-        if(!isMyServiceRunning(VoiceRecogService.class)){
-            startService(new Intent(MainActivity.this, VoiceRecogService.class));
-            Toast.makeText(this, "Service Started !", Toast.LENGTH_SHORT).show();
+        if(isMyServiceRunning(VoiceRecogService.class)){
+            stopService(new Intent(MainActivity.this, VoiceRecogService.class));
+            Toast.makeText(this, "Service Stopped !", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(this, "Service is already running !", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Service is not running !", Toast.LENGTH_SHORT).show();
         }
+        startService(new Intent(this, VoiceListenerService.class));
+        registerReceiver();
+    }
+
+    @Override
+    protected void onStop() {
+
+        if(textReciver != null){
+            unregisterReceiver(textReciver);
+        }
+
+        stopService(new Intent(this, VoiceListenerService.class));
+
+        if(assisantStatus != null && assisantStatus.equals("enabled")){
+            startService(new Intent(MainActivity.this, VoiceRecogService.class));
+            Toast.makeText(this, "Service Started", Toast.LENGTH_SHORT).show();
+        } else if (assisantStatus != null){
+            Toast.makeText(this, "Service Disabled", Toast.LENGTH_SHORT).show();
+        }
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        //stopService(new Intent(MainActivity.this, VoiceRecogService.class));
+        super.onDestroy();
     }
 
     public void buttonClicked() {
@@ -274,7 +326,7 @@ public class MainActivity extends AppCompatActivity {
                 // rechargeunlimitedconfirmationyes Rs <amnt>
                 String text = modelMessageArrayList.get(modelMessageArrayList.size()-2).getText();
                 String price = text.substring(text.lastIndexOf(" ") + 2).replaceAll("\\?", "");
-                text = "rechargeunlimitedconfirmationyes " + price + " Rs";
+                text = "rechargeunlimitedconfirmationyes ₹" + price;
 //                Log.e("checkForYes", price);
 //                Log.e("checkForText", text);
                 QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(text).setLanguageCode("en")).build();
@@ -327,9 +379,9 @@ public class MainActivity extends AppCompatActivity {
                 if(isRecording) {
                     Toast.makeText(MainActivity.this, "Released !", Toast.LENGTH_SHORT).show();
                     try {
-                        recorder.stopRecording();
+                        //recorder.stopRecording();
                         new SpeechToTextTask(MainActivity.this,sessionName, client).execute();
-                        setupRecorder();
+                        //setupRecorder();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -340,8 +392,8 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Pressed !", Toast.LENGTH_SHORT).show();
                 if(isRecording) {
 //                    Log.e("Error Check", "Recording Started");
-                    setupRecorder();
-                    recorder.startRecording();
+                    //setupRecorder();
+                    //recorder.startRecording();
                 }
                 else {
 //                    Log.e("Error Check", "Button Clicked");
@@ -475,16 +527,16 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void setupRecorder() {
-        recorder = OmRecorder.wav(
-                new PullTransport.Default(mic(), new PullTransport.OnAudioChunkPulledListener() {
-                    @Override public void onAudioChunkPulled(AudioChunk audioChunk) {
-                        //animateVoice((float) (audioChunk.maxAmplitude() / 200.0));
-                    }
-                }), file());
-
-
-    }
+//    private void setupRecorder() {
+//        recorder = OmRecorder.wav(
+//                new PullTransport.Default(mic(), new PullTransport.OnAudioChunkPulledListener() {
+//                    @Override public void onAudioChunkPulled(AudioChunk audioChunk) {
+//                        //animateVoice((float) (audioChunk.maxAmplitude() / 200.0));
+//                    }
+//                }), file());
+//
+//
+//    }
 
     private PullableSource mic() {
         return new PullableSource.Default(
@@ -668,6 +720,24 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return false;
+    }
+
+    private void registerReceiver() {
+        textReciver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String otpCode = intent.getStringExtra("text");
+                Log.e("CHECK_BROADCAST", otpCode);
+                /*
+                 * Step 3: We can update the UI of the activity here
+                 * */
+//                adapterChat.addItem(new ModelMessage(otpCode, "user", "user"));
+//                QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(otpCode).setLanguageCode("en")).build();
+//                new RequestTask(MainActivity.this, sessionName, client, input, otpCode, 0).execute();
+
+            }
+        };
+        registerReceiver(textReciver, new IntentFilter("textrecieved"));
     }
 
 }
