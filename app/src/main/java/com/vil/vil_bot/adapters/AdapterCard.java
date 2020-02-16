@@ -44,14 +44,10 @@ public class AdapterCard extends RecyclerView.Adapter<AdapterCard.MyViewHolder> 
                 view.findViewById(R.id.rechargeUsage).setVisibility(view.GONE);
             }
         }
-//        if(((TextView) view.findViewById(R.id.recharge_usage)).getText().toString().equals("0")) {
-//            view.findViewById(R.id.rechargeUsage).setVisibility(view.GONE);
-//        }
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 String price = ((TextView) view.findViewById(R.id.recharge_amount)).getText().toString();
-//                Log.e("onClick", "Card Clicked " + price);
                 modelMessageArrayList.add(new ModelMessage("Confirm recharge of " + price + "?", "", "bot"));
                 notifyDataSetChanged();
                 recyclerView.scrollToPosition(modelMessageArrayList.size()-1);
@@ -75,7 +71,8 @@ public class AdapterCard extends RecyclerView.Adapter<AdapterCard.MyViewHolder> 
     public int getItemCount() {
         if(!sender.equals("bot"))
             return 0;
-        return (rechargeDetailsArrayList.size()>4)?4:rechargeDetailsArrayList.size();
+        return (rechargeDetailsArrayList.size()>3)?3:rechargeDetailsArrayList.size();
+//        return rechargeDetailsArrayList.size();
     }
 
     public class MyViewHolder extends RecyclerView.ViewHolder{

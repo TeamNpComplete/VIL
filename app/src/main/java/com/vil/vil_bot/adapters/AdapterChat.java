@@ -52,6 +52,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
         ModelMessage modelMessage = modelMessageArrayList.get(position);
+        String message = modelMessage.getText();
 
         if(!modelMessage.getSenderName().equals("user")){
             // message by bot
@@ -68,12 +69,97 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
             holder.linearLayout.setBackground(drawable);
 
             ArrayList<RechargeDetails> rechargeDetailsArrayList;
-            if(modelMessage.getIntent().equals("recharge.phone.upgrade")) {
-                SQLiteDatabase database = context.openOrCreateDatabase("TeleData",0, null);
-                Cursor c = database.rawQuery("SELECT * FROM Unlimited", null);
-                c.moveToFirst();
-                rechargeDetailsArrayList = new ArrayList<>();
-                do {
+            Log.e("inner Intent", modelMessage.getIntent());
+            String[] split_intent = modelMessage.getIntent().split(":");
+            modelMessage.setIntent(split_intent[0]);
+            Log.e("inner Intent", split_intent[0]);
+            switch (split_intent[0]) {
+                case "recharge.phone.upgrade": {
+                    SQLiteDatabase database = context.openOrCreateDatabase("TeleData", 0, null);
+                    Cursor c;
+                    if(split_intent.length >1)
+                        c = database.rawQuery("SELECT * FROM Unlimited WHERE cost=" + split_intent[1], null);
+                    else
+                        c = database.rawQuery("SELECT * FROM Unlimited", null);
+                    c.moveToFirst();
+                    rechargeDetailsArrayList = new ArrayList<>();
+                    do {
+                        RechargeDetails rechargeDetails = new RechargeDetails();
+                        rechargeDetails.setPrice(c.getInt(c.getColumnIndex("cost")));
+                        rechargeDetails.setRechargeType("Calls");
+                        rechargeDetails.setRechargeLimit("Unlimited");
+                        rechargeDetails.setRechargeUsage(c.getString(c.getColumnIndex("data")));
+                        rechargeDetails.setRechargeValidity(c.getString(c.getColumnIndex("validity")));
+                        rechargeDetailsArrayList.add(rechargeDetails);
+                    } while (c.moveToNext());
+                    c.close();
+                    break;
+                }
+                case "sms-plan-upgrade": {
+                    SQLiteDatabase database = context.openOrCreateDatabase("TeleData", 0, null);
+                    Cursor c;
+                    if(split_intent.length >1)
+                        c = database.rawQuery("SELECT * FROM SMS WHERE cost=" + split_intent[1], null);
+                    else
+                        c = database.rawQuery("SELECT * FROM SMS", null);
+                    c.moveToFirst();
+                    rechargeDetailsArrayList = new ArrayList<>();
+                    do {
+                        RechargeDetails rechargeDetails = new RechargeDetails();
+                        rechargeDetails.setPrice(c.getInt(c.getColumnIndex("cost")));
+                        rechargeDetails.setRechargeType("SMS");
+                        rechargeDetails.setRechargeLimit(String.valueOf(c.getInt(c.getColumnIndex("no_of_sms"))));
+                        rechargeDetails.setRechargeValidity(c.getString(c.getColumnIndex("validity")));
+                        rechargeDetailsArrayList.add(rechargeDetails);
+                    } while (c.moveToNext());
+                    c.close();
+                    break;
+                }
+                case "talktime-plan-upgrade": {
+                    SQLiteDatabase database = context.openOrCreateDatabase("TeleData", 0, null);
+                    Cursor c;
+                    if(split_intent.length >1)
+                        c = database.rawQuery("SELECT * FROM Talktime WHERE cost=" + split_intent[1], null);
+                    else
+                        c = database.rawQuery("SELECT * FROM Talktime", null);
+                    c.moveToFirst();
+                    rechargeDetailsArrayList = new ArrayList<>();
+                    do {
+                        RechargeDetails rechargeDetails = new RechargeDetails();
+                        rechargeDetails.setPrice(c.getInt(c.getColumnIndex("cost")));
+                        rechargeDetails.setRechargeType("Talktime");
+                        rechargeDetails.setRechargeLimit("₹" + c.getFloat(c.getColumnIndex("talktime")));
+                        rechargeDetails.setRechargeValidity(c.getString(c.getColumnIndex("validity")));
+                        rechargeDetailsArrayList.add(rechargeDetails);
+                    } while (c.moveToNext());
+                    c.close();
+                    break;
+                }
+                case "data.plan.upgrade": {
+                    SQLiteDatabase database = context.openOrCreateDatabase("TeleData", 0, null);
+                    Cursor c;
+                    if(split_intent.length >1)
+                        c = database.rawQuery("SELECT * FROM Netpack WHERE cost=" + split_intent[1], null);
+                    else
+                        c = database.rawQuery("SELECT * FROM Netpack", null);
+                    c.moveToFirst();
+                    rechargeDetailsArrayList = new ArrayList<>();
+                    do {
+                        RechargeDetails rechargeDetails = new RechargeDetails();
+                        rechargeDetails.setPrice(c.getInt(c.getColumnIndex("cost")));
+                        rechargeDetails.setRechargeType("Data");
+                        rechargeDetails.setRechargeLimit(c.getString(c.getColumnIndex("data")));
+                        rechargeDetails.setRechargeValidity(c.getString(c.getColumnIndex("validity")));
+                        rechargeDetailsArrayList.add(rechargeDetails);
+                    } while (c.moveToNext());
+                    c.close();
+                    break;
+                }
+                case "current-plan": {
+                    SQLiteDatabase database = context.openOrCreateDatabase("TeleData", 0, null);
+                    Cursor c = database.rawQuery("SELECT * FROM Unlimited WHERE id=3", null);
+                    c.moveToFirst();
+                    rechargeDetailsArrayList = new ArrayList<>();
                     RechargeDetails rechargeDetails = new RechargeDetails();
                     rechargeDetails.setPrice(c.getInt(c.getColumnIndex("cost")));
                     rechargeDetails.setRechargeType("Calls");
@@ -81,41 +167,27 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
                     rechargeDetails.setRechargeUsage(c.getString(c.getColumnIndex("data")));
                     rechargeDetails.setRechargeValidity(c.getString(c.getColumnIndex("validity")));
                     rechargeDetailsArrayList.add(rechargeDetails);
-                }while(c.moveToNext());
-                c.close();
-            }
-            else if(modelMessage.getIntent().equals("sms-plan-upgrade")) {
-                SQLiteDatabase database = context.openOrCreateDatabase("TeleData",0, null);
-                Cursor c = database.rawQuery("SELECT * FROM SMS", null);
-                c.moveToFirst();
-                rechargeDetailsArrayList = new ArrayList<>();
-                do {
-                    RechargeDetails rechargeDetails = new RechargeDetails();
-                    rechargeDetails.setPrice(c.getInt(c.getColumnIndex("cost")));
-                    rechargeDetails.setRechargeType("SMS");
-                    rechargeDetails.setRechargeLimit(String.valueOf(c.getInt(c.getColumnIndex("no_of_sms"))));
-                    rechargeDetails.setRechargeValidity(c.getString(c.getColumnIndex("validity")));
-                    rechargeDetailsArrayList.add(rechargeDetails);
-                }while(c.moveToNext());
-                c.close();
-            }
-            else if(modelMessage.getIntent().equals("talktime-plan-upgrade")) {
-                SQLiteDatabase database = context.openOrCreateDatabase("TeleData",0, null);
-                Cursor c = database.rawQuery("SELECT * FROM Talktime", null);
-                c.moveToFirst();
-                rechargeDetailsArrayList = new ArrayList<>();
-                do {
-                    RechargeDetails rechargeDetails = new RechargeDetails();
-                    rechargeDetails.setPrice(c.getInt(c.getColumnIndex("cost")));
-                    rechargeDetails.setRechargeType("Talktime");
-                    rechargeDetails.setRechargeLimit(String.valueOf(c.getFloat(c.getColumnIndex("talktime"))));
-                    rechargeDetails.setRechargeValidity(c.getString(c.getColumnIndex("validity")));
-                    rechargeDetailsArrayList.add(rechargeDetails);
-                }while(c.moveToNext());
-                c.close();
-            }
-            else {
-                rechargeDetailsArrayList = new ArrayList<>();
+                    c.close();
+                    break;
+                }
+                case "data.usage": {
+                    message += " 748MB.";
+                    rechargeDetailsArrayList = new ArrayList<>();
+                    break;
+                }
+                case "validity-pack": {
+                    message += " 29th Feb, 2020.";
+                    rechargeDetailsArrayList = new ArrayList<>();
+                    break;
+                }
+                case "check-balance": {
+                    message += " ₹16.";
+                    rechargeDetailsArrayList = new ArrayList<>();
+                    break;
+                }
+                default:
+                    rechargeDetailsArrayList = new ArrayList<>();
+                    break;
             }
             adapterCard = new AdapterCard(rechargeDetailsArrayList, modelMessageArrayList, "bot", recyclerView);
             holder.recyclerViewBill.setAdapter(adapterCard);
@@ -141,7 +213,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.MyViewHolder>{
             holder.recyclerViewBill.setRecycledViewPool(recycledViewPool);
         }
 
-        holder.message.setText(modelMessage.getText());
+        holder.message.setText(message);
     }
 
     @Override

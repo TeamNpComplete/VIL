@@ -10,6 +10,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.media.AudioFormat;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -23,12 +24,14 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.common.api.Result;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -40,6 +43,7 @@ import com.google.cloud.dialogflow.v2.SessionName;
 import com.google.cloud.dialogflow.v2.SessionsClient;
 import com.google.cloud.dialogflow.v2.SessionsSettings;
 import com.google.cloud.dialogflow.v2.TextInput;
+import com.google.gson.JsonElement;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
@@ -58,7 +62,9 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import omrecorder.AudioChunk;
@@ -103,10 +109,12 @@ public class MainActivity extends AppCompatActivity {
     FloatingActionButton sendButton;
     SQLiteDatabase database;
     String responseIntent;
+    String GOOGLE_PAY_PACKAGE_NAME = "com.google.android.apps.nbu.paisa.user";
 
     boolean isRecording = true;
 
     Recorder recorder;
+    final int UPI_PAYMENT = 0;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -220,6 +228,8 @@ public class MainActivity extends AppCompatActivity {
 
         recyclerView = findViewById(R.id.chat_recycler_view);
         adapterChat = new AdapterChat(this, modelMessageArrayList, recyclerView);
+        recyclerView.setHasFixedSize(true);
+        //above line was added
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapterChat);
 
@@ -250,20 +260,29 @@ public class MainActivity extends AppCompatActivity {
             adapterChat.addItem(new ModelMessage(msg, "user", "user"));
 
             if(modelMessageArrayList.get(modelMessageArrayList.size()-1).getText().equals("Yes")) {
-                String text = modelMessageArrayList.get(modelMessageArrayList.size() - 2).getText();
-                String price = text.substring(text.lastIndexOf(" ") + 2).replaceAll("\\?", "");
+                int GOOGLE_PAY_REQUEST_CODE = 123;
 
-                if (responseIntent.equals("recharge.phone.upgrade")) {
-                   msg = "rechargeunlimitedconfirmationyes ₹" + price;
-                } else if (responseIntent.equals("sms-plan-upgrade")) {
-                   msg = "rechargesmsconfirmationyes ₹" + price;
-                } else if (responseIntent.equals("talktime-plan-upgrade")) {
-                    msg = "rechargetalktimeconfirmationyes ₹" + price;
-                }
+                Uri uri = new Uri.Builder()
+                                .scheme("upi")
+                                .authority("pay")
+                                .appendQueryParameter("pa", "adityagunjal1365@okicici")
+                                .appendQueryParameter("pn", "Aditya Gunjal")
+                                //.appendQueryParameter("mc", "your-merchant-code")
+                                // .appendQueryParameter("tr", "your-transaction-ref-id")
+                                //.appendQueryParameter("tn", "your-transaction-note")
+                                .appendQueryParameter("am", "1")
+                                .appendQueryParameter("cu", "INR")
+                                //.appendQueryParameter("url", "your-transaction-url")
+                                .build();
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(uri);
+                intent.setPackage(GOOGLE_PAY_PACKAGE_NAME);
+                this.startActivityForResult(intent, GOOGLE_PAY_REQUEST_CODE);
             }
-            QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(msg).setLanguageCode("en")).build();
-            new RequestTask(MainActivity.this, sessionName, client, input, msg, 0).execute();
-
+            else {
+                QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(msg).setLanguageCode("en")).build();
+                new RequestTask(MainActivity.this, sessionName, client, input, msg, 0).execute();
+            }
             recyclerView.scrollToPosition(adapterChat.getItemCount() - 1);
 
             InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -275,6 +294,54 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == 123){
+            String text = modelMessageArrayList.get(modelMessageArrayList.size() - 2).getText();
+            String price = text.substring(text.lastIndexOf(" ") + 2).replaceAll("\\?", "");
+
+
+            if (data.getStringExtra("response").contains("Status=FAILURE")){
+                switch (responseIntent) {
+                    case "recharge.phone.upgrade":
+                        text = "rechargeunlimitedconfirmationno ₹" + price;
+                        break;
+                    case "sms-plan-upgrade":
+                        text = "rechargesmsconfirmationno ₹" + price;
+                        break;
+                    case "talktime-plan-upgrade":
+                        text = "rechargetalktimeconfirmationno ₹" + price;
+                        break;
+                    case "data.plan.upgrade":
+                        text = "rechargedataconfirmationno ₹" + price;
+                        break;
+                }
+            }else{
+                switch (responseIntent) {
+                    case "recharge.phone.upgrade":
+                        text = "rechargeunlimitedconfirmationyes ₹" + price;
+                        break;
+                    case "sms-plan-upgrade":
+                        text = "rechargesmsconfirmationyes ₹" + price;
+                        break;
+                    case "talktime-plan-upgrade":
+                        text = "rechargetalktimeconfirmationyes ₹" + price;
+                        break;
+                    case "data.plan.upgrade":
+                        text = "rechargedataconfirmationyes " + price;
+                        break;
+                }
+
+                QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(text).setLanguageCode("en")).build();
+                new RequestTask(MainActivity.this, sessionName, client, input, text, 0).execute();
+            }
+        }
+
+
+    }
+
     public void callback(DetectIntentResponse response, String text){
         if(response != null) {
             if(text == null)
@@ -282,9 +349,23 @@ public class MainActivity extends AppCompatActivity {
 
 //            String responseIntent = response.getQueryResult().getIntent().getDisplayName();
             responseIntent = response.getQueryResult().getIntent().getDisplayName();
-            Log.e("Intent", responseIntent);
 
-            adapterChat.addItem(new ModelMessage(text, responseIntent, "bot"));
+            if(responseIntent.equals("recharge.phone.upgrade") || responseIntent.equals("sms-plan-upgrade") ||
+            responseIntent.equals("talktime-plan-upgrade") || responseIntent.equals("data.plan.upgrade")) {
+                String value = String.valueOf(response.getQueryResult().getParameters());
+                int index = value.indexOf("1");
+                value = value.substring(index + 1);
+                String[] str = value.split("\n");
+                str[0] = str[0].substring(0, str[0].length() - 1).trim();
+                Log.e("Intent", str[0]);
+
+                if (!str[0].equals("fields"))
+                    adapterChat.addItem(new ModelMessage(text, responseIntent + ":" + str[0], "bot"));
+                else
+                    adapterChat.addItem(new ModelMessage(text, responseIntent + ":", "bot"));
+            }
+            else
+                adapterChat.addItem(new ModelMessage(text, responseIntent + ":", "bot"));
             recyclerView.scrollToPosition(adapterChat.getItemCount() - 1);
 
             InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -425,10 +506,8 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
             return result;
         }
-
     }
 
     boolean isOpened = false;
@@ -455,12 +534,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupRecorder() {
         recorder = OmRecorder.wav(
-                new PullTransport.Default(mic(), new PullTransport.OnAudioChunkPulledListener() {
-                    @Override public void onAudioChunkPulled(AudioChunk audioChunk) {
-                        //animateVoice((float) (audioChunk.maxAmplitude() / 200.0));
-                    }
-                }), file());
-
+            new PullTransport.Default(mic(), new PullTransport.OnAudioChunkPulledListener() {
+                @Override public void onAudioChunkPulled(AudioChunk audioChunk) {
+                    //animateVoice((float) (audioChunk.maxAmplitude() / 200.0));
+                }
+            }), file());
     }
 
     private PullableSource mic() {
