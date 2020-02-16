@@ -39,12 +39,16 @@ public class AdapterCard extends RecyclerView.Adapter<AdapterCard.MyViewHolder> 
     @Override
     public AdapterCard.MyViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.recharge_details_card, parent, false);
+        if(rechargeDetailsArrayList.size()>0){
+            if(!rechargeDetailsArrayList.get(0).getRechargeType().equals("Calls")){
+                view.findViewById(R.id.rechargeUsage).setVisibility(view.GONE);
+            }
+        }
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 String price = ((TextView) view.findViewById(R.id.recharge_amount)).getText().toString();
-//                Log.e("onClick", "Card Clicked " + price);
-                modelMessageArrayList.add(new ModelMessage("Confirm recharge of " + price + "?", "", "bot"));
+                modelMessageArrayList.add(new ModelMessage("Confirm recharge of " + price + "?", "", "bot", null));
                 notifyDataSetChanged();
                 recyclerView.scrollToPosition(modelMessageArrayList.size()-1);
             }
@@ -57,6 +61,8 @@ public class AdapterCard extends RecyclerView.Adapter<AdapterCard.MyViewHolder> 
         RechargeDetails rechargeDetails = rechargeDetailsArrayList.get(position);
 
         holder.rechargeAmount.setText("₹" + rechargeDetails.getPrice());
+        holder.rechargeType.setText(rechargeDetails.getRechargeType());
+        holder.rechargeLimit.setText(rechargeDetails.getRechargeLimit());
         holder.rechargeUsage.setText(rechargeDetails.getRechargeUsage());
         holder.rechargeValidity.setText(rechargeDetails.getRechargeValidity());
     }
@@ -65,18 +71,20 @@ public class AdapterCard extends RecyclerView.Adapter<AdapterCard.MyViewHolder> 
     public int getItemCount() {
         if(!sender.equals("bot"))
             return 0;
-        return (rechargeDetailsArrayList.size()>4)?4:rechargeDetailsArrayList.size();
+        return (rechargeDetailsArrayList.size()>3)?3:rechargeDetailsArrayList.size();
+//        return rechargeDetailsArrayList.size();
     }
 
     public class MyViewHolder extends RecyclerView.ViewHolder{
 
-        TextView rechargeAmount, rechargeType, rechargeUsage, rechargeValidity;
+        TextView rechargeAmount, rechargeType, rechargeLimit, rechargeUsage, rechargeValidity;
 
         private MyViewHolder(@NonNull View itemView) {
             super(itemView);
 
             rechargeAmount = itemView.findViewById(R.id.recharge_amount);
             rechargeType = itemView.findViewById(R.id.recharge_type);
+            rechargeLimit = itemView.findViewById(R.id.recharge_limit);
             rechargeUsage = itemView.findViewById(R.id.recharge_usage);
             rechargeValidity = itemView.findViewById(R.id.recharge_validity);
         }

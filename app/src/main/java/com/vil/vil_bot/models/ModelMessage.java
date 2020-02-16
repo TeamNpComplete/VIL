@@ -4,7 +4,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 public class ModelMessage {
-    String messageID;
+    String value;
     String text, intent, senderName, date;
     Object timestamp;
 
@@ -12,20 +12,21 @@ public class ModelMessage {
 
     }
 
-    public ModelMessage(String text, String intent, String senderName) {
+    public ModelMessage(String text, String intent, String senderName, String value) {
         this.text = text;
         this.intent = intent;
         this.senderName = senderName;
-        this.date = Calendar.getInstance().getTime().toString();
-        this.timestamp = new Date().getTime();
+        this.value = value;
+//        this.date = Calendar.getInstance().getTime().toString();
+//        this.timestamp = new Date().getTime();
     }
 
-    public String getMessageID() {
-        return messageID;
+    public String getValue() {
+        return value;
     }
 
-    public void setMessageID(String messageID) {
-        this.messageID = messageID;
+    public void setValue(String value) {
+        this.value = value;
     }
 
     public String getText() {

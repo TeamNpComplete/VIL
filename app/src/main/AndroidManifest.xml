@@ -6,6 +6,11 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
+    <meta-data
+        android:name="com.google.android.gms.wallet.api.enabled"
+        android:value="true" />
+
+
     <application
         android:name="androidx.multidex.MultiDexApplication"
         android:allowBackup="true"
@@ -30,14 +35,6 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="restartservice" />
-            </intent-filter>
-        </receiver>
-
-        <receiver android:name=".services.TextReciever"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="textrecieved"/>
             </intent-filter>
         </receiver>
 
