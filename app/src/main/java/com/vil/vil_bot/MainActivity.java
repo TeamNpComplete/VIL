@@ -33,6 +33,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -96,7 +97,7 @@ import org.json.JSONObject;
 public class MainActivity extends AppCompatActivity {
 
 
-    BroadcastReceiver textReciver;
+    protected TextReciever myReceiver;
 
 
     public static String langCode = "en-IN";
@@ -139,10 +140,12 @@ public class MainActivity extends AppCompatActivity {
             case R.id.changeLanguage:
                 intent = new Intent(this, ChangeLanguage.class);
                 startActivity(intent);
+                finish();
                 return true;
             case R.id.changePreferences:
                 intent = new Intent(this, ChangeVoiceAssistant.class);
                 startActivity(intent);
+                finish();
             case R.id.aboutUs:
                 //about us code here
                 return true;
@@ -286,16 +289,18 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, "Service is not running !", Toast.LENGTH_SHORT).show();
         }
+
+        if(queryString != null && queryString.length() > 0){
+            adapterChat.addItem(new ModelMessage(queryString, "user", "user"));
+            QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(queryString).setLanguageCode("en")).build();
+            new RequestTask(MainActivity.this, sessionName, client, input, queryString, 0).execute();
+        }
+
         startService(new Intent(this, VoiceListenerService.class));
-        registerReceiver();
     }
 
     @Override
     protected void onStop() {
-
-        if(textReciver != null){
-            unregisterReceiver(textReciver);
-        }
 
         stopService(new Intent(this, VoiceListenerService.class));
 
@@ -722,22 +727,31 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    private void registerReceiver() {
-        textReciver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String otpCode = intent.getStringExtra("text");
-                Log.e("CHECK_BROADCAST", otpCode);
-                /*
-                 * Step 3: We can update the UI of the activity here
-                 * */
-//                adapterChat.addItem(new ModelMessage(otpCode, "user", "user"));
-//                QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(otpCode).setLanguageCode("en")).build();
-//                new RequestTask(MainActivity.this, sessionName, client, input, otpCode, 0).execute();
+    public class TextReciever extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Bundle b = intent.getExtras();
+            String text = b.getString("text");
+            adapterChat.addItem(new ModelMessage(text, "user", "user"));
+            QueryInput input = QueryInput.newBuilder().setText(TextInput.newBuilder().setText(text).setLanguageCode("en")).build();
+            new RequestTask(MainActivity.this, sessionName, client, input, text, 0).execute();
+        }
+    }
 
-            }
-        };
-        registerReceiver(textReciver, new IntentFilter("textrecieved"));
+    @Override
+    public void onResume(){
+        myReceiver = new TextReciever();
+        final IntentFilter intentFilter = new IntentFilter("YourAction");
+        LocalBroadcastManager.getInstance(this).registerReceiver(myReceiver, intentFilter);
+        super.onResume();
+    }
+
+    @Override
+    public void onPause(){
+        if(myReceiver != null)
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(myReceiver);
+        myReceiver = null;
+        super.onPause();
     }
 
 }

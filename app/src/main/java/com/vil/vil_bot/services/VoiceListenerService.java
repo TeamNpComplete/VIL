@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.vil.vil_bot.MainActivity;
 
@@ -62,7 +63,8 @@ public class VoiceListenerService extends Service {
         mSpeechRecognizer.setRecognitionListener(new SpeechListener());
 
         mSpeechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        mSpeechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.forLanguageTag(MainActivity.langCode));
+        mSpeechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, MainActivity.langCode);
+        mSpeechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, MainActivity.langCode);
         mSpeechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         mSpeechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE,
@@ -81,6 +83,13 @@ public class VoiceListenerService extends Service {
 
         Log.e("CHECK_LANG", "OnStart");
         Toast.makeText(this, "OnStart", Toast.LENGTH_SHORT).show();
+
+        AudioManager amanager=(AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        amanager.setStreamMute(AudioManager.STREAM_NOTIFICATION, true);
+//        amanager.setStreamMute(AudioManager.STREAM_ALARM, true);
+//        amanager.setStreamMute(AudioManager.STREAM_MUSIC, true);
+//        amanager.setStreamMute(AudioManager.STREAM_RING, true);
+        amanager.setStreamMute(AudioManager.STREAM_SYSTEM, true);
 
         return START_STICKY;
     }
@@ -118,6 +127,15 @@ public class VoiceListenerService extends Service {
 
         @Override
         public void onError(int error) {
+            Log.e("CHECK_LANG", "ERROR : " + String.valueOf(error));
+
+            if(error == SpeechRecognizer.ERROR_NO_MATCH){
+                mSpeechRecognizer.startListening(mSpeechRecognizerIntent);
+            }
+
+            if(error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT){
+                mSpeechRecognizer.startListening(mSpeechRecognizerIntent);
+            }
 
         }
 
@@ -141,10 +159,11 @@ public class VoiceListenerService extends Service {
         public void onResults(Bundle results) {
 
             Log.e("CHECK_LANG", "OnResults");
-            Intent intent = new Intent();
-            intent.setAction("textrecieved");
-            intent.putExtra("text", results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION).get(0));
-            sendBroadcast(intent);
+            Intent intent = new Intent("YourAction");
+            Bundle bundle = new Bundle();
+            bundle.putString("text", results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION).get(0));
+            intent.putExtras(bundle);
+            LocalBroadcastManager.getInstance(VoiceListenerService.this).sendBroadcast(intent);
 
             mSpeechRecognizer.startListening(mSpeechRecognizerIntent);
 

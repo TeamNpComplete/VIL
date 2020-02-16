@@ -247,6 +247,13 @@ public class VoiceRecogService extends Service
             Toast.makeText(VoiceRecogService.this, text, Toast.LENGTH_SHORT).show();
 
             if(text.contains("vodafone") || text.contains("vodaphone")){
+
+                if(text.contains("vodaphone")){
+                    text = text.replaceAll("vodaphone", "");
+                } else {
+                    text = text.replaceAll("vodafone", "");
+                }
+                dialogIntent.putExtra("QUERY", text);
                 dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 dialogIntent.addFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
                 startActivity(dialogIntent);
