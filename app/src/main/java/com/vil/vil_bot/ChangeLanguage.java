@@ -68,6 +68,28 @@ public class ChangeLanguage extends AppCompatActivity {
                 startActivity(intent);
                 finish();
                 break;
+            case R.id.bengali:
+                if (checked)
+                    str="bn-IN";
+                intent.putExtra("LANGUAGE_CODE",str);
+                startActivity(intent);
+                finish();
+                break;
+            case R.id.tamil:
+                if (checked)
+                    str="tm-IN";
+                intent.putExtra("LANGUAGE_CODE",str);
+                startActivity(intent);
+                finish();
+                break;
+            case R.id.telugu:
+                if (checked)
+                    str="te-IN";
+                intent.putExtra("LANGUAGE_CODE",str);
+                startActivity(intent);
+                finish();
+                break;
+
         }
     }
 

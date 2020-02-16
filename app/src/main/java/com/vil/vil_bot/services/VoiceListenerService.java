@@ -73,7 +73,7 @@ public class VoiceListenerService extends Service {
 
         mSpeechRecognizer.startListening(mSpeechRecognizerIntent);
         Log.e("CHECK_LANG", "OnCreate");
-        Toast.makeText(this, "OnCreate", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "OnCreate", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -82,7 +82,8 @@ public class VoiceListenerService extends Service {
         mSpeechRecognizer.startListening(mSpeechRecognizerIntent);
 
         Log.e("CHECK_LANG", "OnStart");
-        Toast.makeText(this, "OnStart", Toast.LENGTH_SHORT).show();
+        //
+        //Toast.makeText(this, "OnStart", Toast.LENGTH_SHORT).show();
 
         AudioManager amanager=(AudioManager)getSystemService(Context.AUDIO_SERVICE);
         amanager.setStreamMute(AudioManager.STREAM_NOTIFICATION, true);

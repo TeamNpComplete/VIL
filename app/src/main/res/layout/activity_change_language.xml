@@ -80,6 +80,30 @@
             android:onClick="onRadioButtonClicked"
             android:text="Malyalam"
             android:textSize="25sp" />
+        <RadioButton
+            android:id="@+id/bengali"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20sp"
+            android:onClick="onRadioButtonClicked"
+            android:text="Malyalam"
+            android:textSize="25sp" />
+        <RadioButton
+            android:id="@+id/tamil"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20sp"
+            android:onClick="onRadioButtonClicked"
+            android:text="Malyalam"
+            android:textSize="25sp" />
+        <RadioButton
+            android:id="@+id/telugu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20sp"
+            android:onClick="onRadioButtonClicked"
+            android:text="Malyalam"
+            android:textSize="25sp" />
     </RadioGroup>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

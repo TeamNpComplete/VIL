@@ -244,7 +244,7 @@ public class VoiceRecogService extends Service
 
             text = text.toLowerCase();
 
-            Toast.makeText(VoiceRecogService.this, text, Toast.LENGTH_SHORT).show();
+            //Toast.makeText(VoiceRecogService.this, text, Toast.LENGTH_SHORT).show();
 
             if(text.contains("vodafone") || text.contains("vodaphone")){
 
